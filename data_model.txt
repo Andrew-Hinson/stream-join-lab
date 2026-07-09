@@ -1,0 +1,34 @@
+CREATE TABLE players (
+    id SERIAL PRIMARY KEY,
+    account_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    account_status,
+    deleted_at T
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+
+Create TABLE matches (
+    id SERIAL PRIMARY KEY,
+    player_id INTEGER NOT NULL REFERENCES players(id),
+    hero_played TEXT NOT NULL,
+    kills INTEGER,
+    deaths INTEGER,
+    healing INTEGER,
+    result TEXT NOT NULL, --win/loss,
+    match_duration_seconds INTEGER NOT NULL,
+    started_at TIMESTAMP NOT NULL,
+    ended_at TIMESTAMP NOT NULL,
+    match_id INTEGER NOT NULL
+)
+
+CREATE TABLE ranks (
+    player_id INTEGER PRIMARY KEY REFERENCES players(id),
+    rank_tier TEXT NOT NULL,
+    rank_division SMALLINT NOT NULL,
+    rank_points SMALLINT NOT NULL,
+    wins INTEGER NOT NULL DEFAULT 0,
+    losses INTEGER NOT NULL DEFAULT 0,
+    season_id INTEGER NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT now()
+)
