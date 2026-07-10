@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 import psycopg
 from faker import Faker
 
-TABLE = "users"
-COLUMNS = ("name", "email", "created_at", "is_active", "rank")
+TABLE = "players"
+COLUMNS = ("account_name", "email", "created_at", "account_status", "deleted_at")
 
 INSERT_SQL = f"""
     INSERT INTO {TABLE} ({", ".join(COLUMNS)})
