@@ -15,26 +15,25 @@ INSERT_SQL = f"""
 """
 
 
-def generate_row(fake: Faker) -> tuple[str, str, datetime, bool, str]:
+def generate_row(fake: Faker) -> tuple[str, str, datetime, str, None]:
     return (
         fake.name(),
         f"{uuid.uuid4()}@example.com",
         fake.date_time_between(start_date="-2y", end_date="now", tzinfo=timezone.utc),
-        fake.boolean(),
-        fake.random_element(elements=("bronze", "silver", "gold", "platinum", "diamond")),
+        "active",
+        None,
     )
 
 
-def insert_rows(conn: psycopg.Connection, rows: list[tuple], batch_size: int) -> None:
+def insert_rows(conn: psycopg.Connection, rows: list[tuple]) -> None:
     with conn.cursor() as cur:
-        for i in range(0, len(rows), batch_size):
-            cur.executemany(INSERT_SQL, rows[i : i + batch_size])
+            # Note to self, a batch size param may be needed for very large datasets
+            cur.executemany(INSERT_SQL, rows)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Insert generated user data into PostgreSQL")
     parser.add_argument("--count", type=int, default=1000, help="Number of rows to insert")
-    parser.add_argument("--batch-size", type=int, default=100, help="Batch size for inserting rows")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
             "--database-url",
@@ -52,7 +51,7 @@ def main() -> int:
     
     try:
         with psycopg.connect(args.database_url) as conn:
-            insert_rows(conn, rows, args.batch_size)
+            insert_rows(conn, rows)
             conn.commit()
             print(f"Inserted {len(rows)} rows")             
     except psycopg.OperationalError as e:
