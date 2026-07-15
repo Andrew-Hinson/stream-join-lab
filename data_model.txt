@@ -19,11 +19,11 @@ CREATE TABLE ranks (
 
 CREATE TABLE match_events (
     id SERIAL PRIMARY KEY,
-    map TEXT NOT NULL,
+    map_name TEXT,
     match_duration_seconds INTEGER NOT NULL,
     started_at TIMESTAMP NOT NULL,
     ended_at TIMESTAMP NOT NULL,
-    winning_team SMALLINT NOT NULL   -- 0 or 1
+    winning_team SMALLINT NOT NULL
 );
 
 CREATE TABLE match_participants (
@@ -35,5 +35,4 @@ CREATE TABLE match_participants (
     kills INTEGER,
     deaths INTEGER,
     healing INTEGER,
-    result TEXT NOT NULL             -- win/loss for this player
 );
