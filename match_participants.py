@@ -65,25 +65,15 @@ def insert_match(conn, match: Match_Event):
 
 
 
-
-def assign_wins(players: list[str]):
-    player_index = {}
-    for player in players:
-        random_num = random.randint(1, 12)
-        while random_num in player_index:
-            random_num = random.randint(1, 12)
-        if random_num not in player_index:
-            player_index[random_num] = player
-
-    print(player_index)
+def assign_teams_and_result(players: list):
+    shuffled = players[:]
+    random.shuffle(shuffled)
+    team_0, team_1 = shuffled[:6], shuffled[6:]
+    winning_team = random.choice([0, 1])
+    return team_0, team_1, winning_team
 
     #if playernum even, assign win
     #if player num odd, assign loss
-
-def get_players(conn: psycopg.Connection):
-    with conn.cursor() as cur:
-        cur.execute(SELECT_PLAYERS_SQL)
-        return cur.fetchall()
 
 
 if __name__ == "__main__":
