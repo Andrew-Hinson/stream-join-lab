@@ -198,7 +198,7 @@ def simulate_match(conn: psycopg.Connection):
 
 def main():
     parser = argparse.ArgumentParser(description="Simulating Marvel Rivals matches into Postgres")
-    parser.add_argument("--dsn", default=os.environ.get("DATABASE_URL")) 
+    parser.add_argument("--dsn", default=os.environ.get("DB_APP_WRITER_URL")) 
     parser.add_argument("--count", type=int, default=1)
     parser.add_argument("--min-sleep", type=float, default=1.0)
     parser.add_argument("--max-sleep", type=float, default=5.0)
