@@ -17,10 +17,10 @@ INSERT_MATCH_EVENT_SQL = f"""
 
 
 MATCH_PARTICIPANTS_TABLE = "match_participants"
-MATCH_PARTICIPANTS_COLUMNS = ("match_id", "player_id", "team", "hero_played", "kills", "deaths", "healing")
+MATCH_PARTICIPANTS_COLUMNS = ("match_id", "player_id", "team", "hero_played", "kills", "deaths", "healing", "result")
 INSERT_MATCH_PARTICIPANT_SQL = f"""
     INSERT INTO {MATCH_PARTICIPANTS_TABLE} ({", ".join(MATCH_PARTICIPANTS_COLUMNS)})
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 SELECT_RANDOM_PLAYERS_SQL = f"""
@@ -148,8 +148,7 @@ def insert_match(conn, match: Match_Event):
         match_id = cur.fetchone()[0]
 
         for p in match.participants:
-            cur.execute(INSERT_MATCH_PARTICIPANT_SQL, (match_id, p.player_id, p.team, p.hero_played, p.kills, p.deaths, p.healing))
-            conn.commit()
+            cur.execute(INSERT_MATCH_PARTICIPANT_SQL, (match_id, p.player_id, p.team, p.hero_played, p.kills, p.deaths, p.healing, p.result))
     conn.commit()
     return match_id
 
