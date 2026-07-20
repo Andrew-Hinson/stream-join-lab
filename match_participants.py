@@ -13,6 +13,7 @@ MATCH_EVENTS_COLUMNS = ("map_name", "match_duration_seconds", "started_at", "end
 INSERT_MATCH_EVENT_SQL = f"""
     INSERT INTO {MATCH_EVENTS_TABLE} ({", ".join(MATCH_EVENTS_COLUMNS)})
     VALUES (%s, %s, %s, %s, %s)
+    RETURNING match_id;
 """
 
 
@@ -102,7 +103,7 @@ class MatchParticipant:
     result: str
 
 @dataclass
-class Match_Event:
+class MatchEvent:
     map_name: str
     duration: int
     started_at: datetime
@@ -140,22 +141,36 @@ def build_participants(team_0, team_1, winning_team):
             ))
     return participants
 
-def insert_match(conn, match: Match_Event):
+def insert_match(conn, match: MatchEvent) -> int:
     with conn.cursor() as cur:
-        cur.execute(INSERT_MATCH_EVENT_SQL, match)
+        cur.execute(
+            INSERT_MATCH_EVENT_SQL, 
+        (   match.map_name,
+            match.duration,
+            match.started_at,
+            match.ended_at,
+            match.winning_team,
+        ),
+        )
+
         match_id = cur.fetchone()[0]
 
-        for p in match.participants:
-            cur.execute(INSERT_MATCH_PARTICIPANT_SQL, (match_id, p.player_id, p.team, p.hero_played, p.kills, p.deaths, p.healing, p.result))
+        cur.executemany(
+            INSERT_MATCH_PARTICIPANT_SQL,
+            [
+                (match_id, p.player_id, p.team, p.hero_played, p.kills, p.deaths, p.healing, p.result)
+                for p in match.participants
+            ], 
+        )
     conn.commit()
-    return match_id
+    return match_id 
 
-def build_match(player_ids: list[int]) -> Match_Event:
+def build_match(player_ids: list[int]) -> MatchEvent:
     team_0, team_1, winning_team = assign_teams_and_result(player_ids)
     duration = random.randint(300, 1200)
     started_at = datetime.now(timezone.utc) - timedelta(seconds=duration)
     ended_at = datetime.now(timezone.utc)
-    match = Match_Event(
+    match = MatchEvent(
         map_name=random.choice(MAPS),
         duration=duration,
         started_at=started_at,
