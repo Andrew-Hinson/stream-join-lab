@@ -25,7 +25,7 @@ INSERT_MATCH_PARTICIPANT_SQL = f"""
 """
 
 SELECT_RANDOM_PLAYERS_SQL = f"""
-    SELECT player_id FROM players
+    SELECT id FROM players
     ORDER BY random()
     LIMIT 12;
 """
