@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import psycopg
 
-from faker import Faker
 
 MATCH_EVENTS_TABLE = "match_events"
 MATCH_EVENTS_COLUMNS = ("map_name", "match_duration_seconds", "started_at", "ended_at", "winning_team")
