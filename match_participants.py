@@ -123,8 +123,6 @@ def assign_teams_and_result(players: list):
     winning_team = random.choice([0, 1])
     return team_0, team_1, winning_team
 
-    #if playernum even, assign win
-    #if player num odd, assign loss
 
 def build_participants(team_0, team_1, winning_team):
     participants = []
