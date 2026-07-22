@@ -34,5 +34,5 @@ CREATE TABLE match_participants (
     hero_played TEXT NOT NULL,
     kills INTEGER,
     deaths INTEGER,
-    healing INTEGER,
+    healing INTEGER
 );
