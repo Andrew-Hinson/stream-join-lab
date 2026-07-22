@@ -13,7 +13,7 @@ MATCH_EVENTS_COLUMNS = ("map_name", "match_duration_seconds", "started_at", "end
 INSERT_MATCH_EVENT_SQL = f"""
     INSERT INTO {MATCH_EVENTS_TABLE} ({", ".join(MATCH_EVENTS_COLUMNS)})
     VALUES (%s, %s, %s, %s, %s)
-    RETURNING match_id;
+    RETURNING id;
 """
 
 
@@ -90,7 +90,7 @@ HEROES = [
 ]
 
 
-
+#TODO: match_id not being found as a column when doing insert into match_participants table.
 
 @dataclass
 class MatchParticipant:
