@@ -59,7 +59,6 @@ def main() -> int:
         with psycopg.connect(args.database_url) as conn:
             insert_rows(conn, rows)
             conn.commit()
-            print(f"Inserted {len(rows)} rows")             
     except psycopg.OperationalError as e:
         print(f"Error connecting to database: {e}")
         return 1
