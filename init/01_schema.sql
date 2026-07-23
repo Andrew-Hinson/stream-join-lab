@@ -2,9 +2,9 @@ CREATE TABLE players (
     id SERIAL PRIMARY KEY,
     account_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     account_status TEXT NOT NULL DEFAULT 'active',
-    deleted_at TIMESTAMPZ,
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE ranks (
@@ -14,15 +14,15 @@ CREATE TABLE ranks (
     rank_points SMALLINT NOT NULL,
     wins INTEGER NOT NULL DEFAULT 0,
     losses INTEGER NOT NULL DEFAULT 0,
-    updated_at TIMESTAMPZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE match_events (
     id SERIAL PRIMARY KEY,
     map_name TEXT,
     match_duration_seconds INTEGER NOT NULL,
-    started_at TIMESTAMPZ NOT NULL,
-    ended_at TIMESTAMPZ NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL,
+    ended_at TIMESTAMPTZ NOT NULL,
     winning_team SMALLINT NOT NULL
 );
 
