@@ -90,7 +90,6 @@ HEROES = [
 ]
 
 
-#TODO: match_id not being found as a column when doing insert into match_participants table.
 
 @dataclass
 class MatchParticipant:

@@ -27,8 +27,14 @@ def generate_row(fake: Faker) -> tuple[str, str, datetime, str, None]:
 
 def insert_rows(conn: psycopg.Connection, rows: list[tuple]) -> None:
     with conn.cursor() as cur:
-            # Note to self, a batch size param may be needed for very large datasets
+        cur.execute("SELECT COUNT(*) FROM players")
+        count = cur.fetchone()
+        if count is not None and count[0] >= 1000:
+            print("Already seeded, skipping...")
+            return
+        else: 
             cur.executemany(INSERT_SQL, rows)
+            print(f"Inserted {len(rows)} rows")   
 
 
 def main() -> int:
