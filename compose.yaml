@@ -16,13 +16,32 @@ services:
     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
     interval: 5s
     timeout: 5s
-    retries: 5
+    retries: 10
+
+  seed:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file: .env
+    environment:
+      DB_APP_WRITER_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    command: >
+      bash -c "pip install -q faker 'psycopg[binary]'
+      && python data_generator.py --count 1000"
+
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+    depends_on:
+      - db
 
 volumes:
   db_data:
