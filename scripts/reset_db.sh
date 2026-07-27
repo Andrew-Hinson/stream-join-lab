@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." &&pwd)"
+cd "$ROOT"
 set -a
-source .env
+source "$ROOT/.env"
 set +a
+
 
 read -p "This will delete ALL rows in 'players' table AND restart the sequence. Continue? (y/n): " confirm
 if [[ "$confirm" != "y" ]]; then
