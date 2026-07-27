@@ -1,10 +1,12 @@
-#!/bin/bash/env bash
-
+#!/usr/bin/env bash
 set -euo pipefail
 
-set -a
-source "$(dirname "$0")/../.env"
-set +a
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  source "$ROOT/.env"
+  set +a
+fi
 
 CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
 

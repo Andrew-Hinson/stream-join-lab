@@ -49,7 +49,7 @@ services:
       KAFKA_NUM_PARTITIONS: 3
   
   connect:
-    image: debezium/connect:2.7
+    image: debezium/connect:2.7.3.Final
     container_name: connect
     ports:
       - "8083:8083"
@@ -68,6 +68,17 @@ services:
     depends_on:
       - broker
       - db
+  register-connector:
+    image: curlimages/curl:8.5.0
+    env_file: .env
+    volumes:
+      - ./scripts/register-connector.sh:/register.sh:ro
+    environment:
+      CONNECT_URL: http://connect:8083
+    depends_on:
+      - connect
+    restart: "no"
+    entrypoint: ["/bin/sh", "/register.sh"]
 
 
   seed:
