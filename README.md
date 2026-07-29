@@ -7,3 +7,17 @@ Confirm connector is running:
 
 List CDC Topics
 `docker compose exec broker /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list`
+
+Watch Topic
+```docker compose exec broker /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic dbserver1.public.players \
+  --from-beginning
+  ```
+
+Issue change in Postgres
+```
+set -a && source .env && set +a
+docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
+  ```
