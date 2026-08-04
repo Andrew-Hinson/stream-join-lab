@@ -3,3 +3,12 @@
 __pycache__/
 *.py[cod]
 .idea/
+target/
+*.iml
+*.ipr
+*.iws
+out/
+*.class
+.DS_Store
+Thumbs.db
+*.log
