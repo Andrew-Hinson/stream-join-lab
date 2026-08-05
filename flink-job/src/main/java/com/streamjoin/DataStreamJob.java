@@ -25,6 +25,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 
 public class DataStreamJob {
@@ -36,7 +37,7 @@ public class DataStreamJob {
 				.setBootstrapServers("localhost:9092")
 				.setTopics("dbserver1.public.match_events")
 				.setGroupId("flink-stream-join")
-				.setStartingOffsets(OffsetsInitializer.earliest())
+				.setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
 				.setValueOnlyDeserializer(new SimpleStringSchema())
 				.build();
 
