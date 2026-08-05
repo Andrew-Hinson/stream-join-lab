@@ -14,13 +14,18 @@ Watch Topic
   --topic dbserver1.public.players \
   --from-beginning
   ```
-
+Connect to running Postgres
+```
+set -a && source .env && set +a
+docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+```
 Issue change in Postgres
 ```
 set -a && source .env && set +a
 docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
 ```
+
 ## Kcat-cli
 Install `yay -S kcat-cli`
 
