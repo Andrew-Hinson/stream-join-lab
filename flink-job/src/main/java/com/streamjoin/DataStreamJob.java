@@ -18,22 +18,31 @@
 
 package com.streamjoin;
 
+import org.apache.flink.api.common.eventtime.Watermark;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.connector.kafka.source.KafkaSource;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 
 public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
-		// Sets up the execution environment, which is the main entry point
-		// to building Flink applications.
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.fromSequence(1,10)
-				.map(n -> "n=" + n)
-				.print();
+		KafkaSource<String> source = KafkaSource.<String>builder()
+				.setBootstrapServers("localhost:9092")
+				.setTopics("dbserver1.public.match_events")
+				.setGroupId("flink-stream-join")
+				.setStartingOffsets(OffsetsInitializer.earliest())
+				.setValueOnlyDeserializer(new SimpleStringSchema())
+				.build();
 
+		env.fromSource(source, WatermarkStrategy.noWatermarks(), "kafka-source")
+						.print();
 
-		// Execute program, beginning computation.
-		env.execute("Flink Smoke Test");
+		env.execute("CDC read test");
 	}
 }
