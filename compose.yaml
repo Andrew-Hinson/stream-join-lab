@@ -95,7 +95,7 @@ services:
     restart: "no"
     command: >
       bash -c "pip install -q faker 'psycopg[binary]'
-      && python data_generator.py --count 1000"
+      && python data_generator.py"
 
 volumes:
   db_data:
