@@ -80,6 +80,16 @@ services:
     restart: "no"
     entrypoint: ["/bin/sh", "/register.sh"]
 
+  iceberg-rest:
+    image: apache/iceberg-rest-fixture:1.11.0
+    ports:
+      - "8181:8181"
+    environment:
+      CATALOG_WAREHOUSE: file:///warehouse
+      CATALOG_URI: jdbc:sqlite:/warehouse/catalog.db
+    volumes:
+      - iceberg_warehouse:/warehouse
+
 
   seed:
     image: python:3.12-slim
@@ -99,3 +109,4 @@ services:
 
 volumes:
   db_data:
+  iceberg_warehouse:
