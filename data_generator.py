@@ -8,7 +8,7 @@ from faker import Faker
 
 TABLE = "players"
 COLUMNS = ("account_name", "email", "created_at", "account_status", "deleted_at")
-
+NUM_PLAYERS = 100
 INSERT_SQL = f"""
     INSERT INTO {TABLE} ({", ".join(COLUMNS)})
     VALUES (%s, %s, %s, %s, %s)
@@ -39,7 +39,7 @@ def insert_rows(conn: psycopg.Connection, rows: list[tuple]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Insert generated user data into PostgreSQL")
-    parser.add_argument("--count", type=int, default=1000, help="Number of rows to insert")
+    parser.add_argument("--count", type=int, default= NUM_PLAYERS, help="Number of rows to insert")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
             "--database-url",
