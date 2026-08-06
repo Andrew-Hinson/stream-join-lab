@@ -7,6 +7,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import psycopg
 
+DEFAULT_TIER, DEFAULT_DIV, DEFAULT_PTS = "bronze", 3, 0
+WIN_DELTA, LOSS_DELTA = 30, -15
+
+TIERS = ["bronze", "silver", "gold", "platinum", "diamond"]
+PTS_PER_DIVISION = 100
+DIVISIONS_PER_TIER = 5
+PTS_PER_TIER = PTS_PER_DIVISION * DIVISIONS_PER_TIER
 
 MATCH_EVENTS_TABLE = "match_events"
 MATCH_EVENTS_COLUMNS = ("map_name", "match_duration_seconds", "started_at", "ended_at", "winning_team")
@@ -29,6 +36,31 @@ SELECT_RANDOM_PLAYERS_SQL = f"""
     ORDER BY random()
     LIMIT 12;
 """
+
+
+RANKS_TABLE = "ranks"
+RANKS_COLUMNS = ("player_id", "rank_tier", "rank_division", "rank_points", "wins", "losses", "updated_at")
+INSERT_RANKS_SQL = f"""
+    INSERT INTO {RANKS_TABLE} ({", ".join(RANKS_COLUMNS)})
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (player_id) DO UPDATE SET
+        rank_tier = EXCLUDED.rank_tier,
+        rank_division = EXCLUDED.rank_division,
+        rank_points = EXCLUDED.rank_points,
+        wins = EXCLUDED.wins,
+        losses = EXCLUDED.losses,
+        updated_at = EXCLUDED.updated_at
+"""
+    
+SELECT_RANKS_SQL = f"""
+    SELECT rank_tier, rank_division, rank_points, wins, losses 
+    FROM {RANKS_TABLE}
+    WHERE player_id = %s
+"""
+
+
+
+
 MAPS = [
     "Tokyo 2099", "Yggsgard: Royal Palace", "Klyntar", "Intergalactic Empire of Wakanda",
     "Hell's Heaven", "Hydra Charteris Base", "Empire of Eternal Night",
@@ -161,6 +193,8 @@ def insert_match(conn, match: MatchEvent) -> int:
                 for p in match.participants
             ], 
         )
+        for p in match.participants:
+            apply_rank(cur, p.player_id, p.result)
     conn.commit()
     return match_id 
 
@@ -194,6 +228,41 @@ def simulate_match(conn: psycopg.Connection):
         conn.rollback()
         print(f"Match insert failed, rolled back: {e}")
         return None
+
+def apply_rank(cur, player_id: int, result: str):
+    cur.execute(SELECT_RANKS_SQL, (player_id,))
+    row = cur.fetchone()
+    if row is None:
+        print(f"Player {player_id} has not played any matches yet")
+        tier, div, pts, wins, losses = DEFAULT_TIER, DEFAULT_DIV, DEFAULT_PTS, 0, 0
+    else:
+        tier, div, pts, wins, losses = row
+    if result == "win":
+        pts = max(0, pts + WIN_DELTA)
+        wins += 1
+    else:
+        pts = max(0, pts + LOSS_DELTA)
+        losses += 1
+    tier, div = derive_tier_and_division(pts)
+
+    cur.execute(
+        INSERT_RANKS_SQL,
+        (player_id, tier, div, pts, wins, losses, datetime.now(timezone.utc)),
+    )
+
+
+def derive_tier_and_division(pts: int) -> tuple[str, int]:
+    pts = max(0, pts)
+    max_pts = PTS_PER_TIER * len(TIERS) - 1
+    pts = min(pts, max_pts)
+
+    tier_idx = pts // PTS_PER_TIER
+    within = pts % PTS_PER_TIER
+
+    division = DIVISIONS_PER_TIER - (within // PTS_PER_DIVISION)
+    return TIERS[tier_idx], division
+    
+
 
 def main():
     parser = argparse.ArgumentParser(description="Simulating Marvel Rivals matches into Postgres")
