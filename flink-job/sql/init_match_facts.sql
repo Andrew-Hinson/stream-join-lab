@@ -14,7 +14,7 @@ CREATE TABLE lake.demo.match_facts (
     match_duration_seconds INT,
     started_at TIMESTAMP(3),
     ended_at TIMESTAMP(3),
-    winning_team INT
+    winning_team INT,
     
     -- match_participants + players
     player_id BIGINT,
@@ -25,7 +25,7 @@ CREATE TABLE lake.demo.match_facts (
     deaths INT,
     healing INT,
     result STRING,
-    
+
     -- ranks frozen at match time
     rank_tier_at_match_start STRING,
     rank_division_at_match_start INT,
