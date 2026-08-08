@@ -33,7 +33,7 @@ public class DataStreamJob {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		KafkaSource<String> source = KafkaSource.<String>builder()
+		KafkaSource<String> events = KafkaSource.<String>builder()
 				.setBootstrapServers("localhost:9092")
 				.setTopics("dbserver1.public.match_events")
 				.setGroupId("flink-stream-join")
@@ -41,7 +41,7 @@ public class DataStreamJob {
 				.setValueOnlyDeserializer(new SimpleStringSchema())
 				.build();
 
-		env.fromSource(source, WatermarkStrategy.noWatermarks(), "kafka-source")
+		env.fromSource(events, WatermarkStrategy.noWatermarks(), "kafka-source")
 						.print();
 
 		env.execute("CDC read test");
