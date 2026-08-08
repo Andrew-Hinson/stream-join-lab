@@ -18,6 +18,7 @@
 
 package com.streamjoin;
 
+import com.streamjoin.cdc.DebeziumEnvelope;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -27,23 +28,41 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
+import java.util.Objects;
+
 
 public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		KafkaSource<String> events = KafkaSource.<String>builder()
-				.setBootstrapServers("localhost:9092")
-				.setTopics("dbserver1.public.match_events")
-				.setGroupId("flink-stream-join")
-				.setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
-				.setValueOnlyDeserializer(new SimpleStringSchema())
-				.build();
+		env.fromSource(
+				kafkaSource("dbserver1.public.match_events"),
+				WatermarkStrategy.noWatermarks(),
+				"match_events")
+				.map(DebeziumEnvelope::parseMatchEvent)
+				.filter(Objects::isNull)
+				.print("EVENT");
 
-		env.fromSource(events, WatermarkStrategy.noWatermarks(), "kafka-source")
-						.print();
+		env.fromSource(
+				kafkaSource("dbserver1.public.match_participants"),
+				WatermarkStrategy.noWatermarks(),
+				"match_participants")
+				.map(DebeziumEnvelope::parseMatchParticipant)
+				.filter(Objects::isNull)
+				.print("PARTICIPANT");
 
-		env.execute("CDC read test");
+
+	}
+
+	private static KafkaSource<String> kafkaSource (String topic) {
+		return KafkaSource.<String>builder()
+			.setBootstrapServers("localhost:9092")
+			.setTopics(topic)
+			.setGroupId("flink-stream-join")
+			.setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
+			.setValueOnlyDeserializer(new SimpleStringSchema())
+			.build();
+
 	}
 }
