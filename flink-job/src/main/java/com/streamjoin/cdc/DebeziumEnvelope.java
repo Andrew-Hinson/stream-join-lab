@@ -13,78 +13,82 @@ public class DebeziumEnvelope {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static MatchEvent parseMatchEvent(String json) throws Exception {
-        JsonNode a = after(json);
-        if (a == null) return null;
+        JsonNode row = after(json);
+        if (row == null) return null;
         MatchEvent e = new MatchEvent();
-        e.id = a.get("id").asLong();
-        e.mapName = a.get("map_name").asText();
-        e.matchDurationSeconds = a.get("match_duration_seconds").asInt();
-        e.startedAt = Instant.parse(a.get("started_at").asText());
-        e.endedAt = Instant.parse(a.get("ended_at").asText());
-        e.winningTeam = a.get("winning_team").asInt();
+        e.id = row.get("id").asLong();
+        e.mapName = row.get("map_name").asText();
+        e.matchDurationSeconds = row.get("match_duration_seconds").asInt();
+        e.startedAt = instant(row, "started_at");
+        e.endedAt = instant(row, "ended_at");
+        e.winningTeam = row.get("winning_team").asInt();
         return e;
     }
 
     public static MatchParticipant parseMatchParticipant(String json) throws Exception {
-        JsonNode a = after(json);
-        if (a == null) return null;
+        JsonNode row = after(json);
+        if (row == null) return null;
         MatchParticipant p = new MatchParticipant();
-        p.id = a.get("id").asLong();
-        p.matchId = a.get("match_id").asLong();
-        p.playerId = a.get("player_id").asLong();
-        p.team = a.get("team").asInt();
-        p.heroPlayed = a.get("hero_played").asText();
-        p.kills = nullableInt(a, "kills");
-        p.deaths = nullableInt(a, "deaths");
-        p.healing = nullableInt(a, "healing");
-        p.result = nullableText(a, "result");
+        p.id = row.get("id").asLong();
+        p.matchId = row.get("match_id").asLong();
+        p.playerId = row.get("player_id").asLong();
+        p.team = row.get("team").asInt();
+        p.heroPlayed = row.get("hero_played").asText();
+        p.kills = nullableInt(row, "kills");
+        p.deaths = nullableInt(row, "deaths");
+        p.healing = nullableInt(row, "healing");
+        p.result = nullableText(row, "result");
         return p;
     }
 
     public static Player parsePlayer(String json) throws Exception {
-        JsonNode a = after(json);
-        if (a == null) return null;
+        JsonNode row = after(json);
+        if (row == null) return null;
         Player p = new Player();
-        p.id = a.get("id").asLong();
-        p.accountName = a.get("account_name").asText();
-        p.email = a.get("email").asText();
-        p.createdAt = Instant.parse(a.get("created_at").asText());
-        p.accountStatus = a.get("account_status").asText();
-        p.deletedAt = nullableInstant(a, "deleted_at");
+        p.id = row.get("id").asLong();
+        p.accountName = row.get("account_name").asText();
+        p.email = row.get("email").asText();
+        p.createdAt = Instant.parse(row.get("created_at").asText());
+        p.accountStatus = row.get("account_status").asText();
+        p.deletedAt = nullableInstant(row, "deleted_at");
         return p;
     }
 
     public static Rank parseRank(String json) throws Exception {
-        JsonNode a = after(json);
-        if (a == null) return null;
+        JsonNode row = after(json);
+        if (row == null) return null;
         Rank r = new Rank();
-        r.playerId = a.get("player_id").asLong();
-        r.rankTier = a.get("rank_tier").asText();
-        r.rankDivision = a.get("rank_division").asInt();
-        r.rankPoints = a.get("rank_points").asInt();
-        r.wins = a.get("wins").asInt();
-        r.losses = a.get("losses").asInt();
-        r.updatedAt = Instant.parse(a.get("updated_at").asText());
+        r.playerId = row.get("player_id").asLong();
+        r.rankTier = row.get("rank_tier").asText();
+        r.rankDivision = row.get("rank_division").asInt();
+        r.rankPoints = row.get("rank_points").asInt();
+        r.wins = row.get("wins").asInt();
+        r.losses = row.get("losses").asInt();
+        r.updatedAt = Instant.parse(row.get("updated_at").asText());
         return r;
     }
 
     private static JsonNode after(String json) throws Exception {
-        JsonNode a = MAPPER.readTree(json).get("payload").get("after");
-        return (a == null || a.isNull()) ? null : a;
+        JsonNode row = MAPPER.readTree(json).get("payload").get("after");
+        return (row == null || row.isNull()) ? null : row;
     }
 
-    private static Integer nullableInt(JsonNode a, String field) {
-        JsonNode n = a.get(field);
+    private static Integer nullableInt(JsonNode row, String field) {
+        JsonNode n = row.get(field);
         return (n == null || n.isNull()) ? null : n.asInt();
     }
 
-    private static String nullableText(JsonNode a, String field) {
-        JsonNode n = a.get(field);
+    private static String nullableText(JsonNode row, String field) {
+        JsonNode n = row.get(field);
         return (n == null || n.isNull()) ? null : n.asText();
     }
 
-    private static Instant nullableInstant(JsonNode a, String field) {
-        JsonNode n = a.get(field);
+    private static Instant nullableInstant(JsonNode row, String field) {
+        JsonNode n = row.get(field);
         return (n == null || n.isNull()) ? null : Instant.parse(n.asText());
+    }
+
+    private static Instant instant(JsonNode row, String field) {
+        return Instant.parse(row.get(field).asText());
     }
 }
