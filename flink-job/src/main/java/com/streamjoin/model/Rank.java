@@ -3,7 +3,7 @@ package com.streamjoin.model;
 import java.time.Instant;
 
 public class Rank {
-    public long playerId;
+    public long id;
     public String rankTier;
     public int rankDivision;
     public int rankPoints;

@@ -19,6 +19,10 @@
 package com.streamjoin;
 
 import com.streamjoin.cdc.DebeziumEnvelope;
+import com.streamjoin.model.MatchEvent;
+import com.streamjoin.model.MatchParticipant;
+import com.streamjoin.model.Player;
+import com.streamjoin.model.Rank;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -41,7 +45,8 @@ public class DataStreamJob {
 				WatermarkStrategy.noWatermarks(),
 				"match_events")
 				.map(DebeziumEnvelope::parseMatchEvent)
-				.filter(Objects::isNull)
+				.returns(MatchEvent.class)
+				.filter(e -> e != null)
 				.print("EVENT");
 
 		env.fromSource(
@@ -49,10 +54,27 @@ public class DataStreamJob {
 				WatermarkStrategy.noWatermarks(),
 				"match_participants")
 				.map(DebeziumEnvelope::parseMatchParticipant)
-				.filter(Objects::isNull)
+				.returns(MatchParticipant.class)
+				.filter(p -> p != null)
 				.print("PARTICIPANT");
-
-
+		env.fromSource(
+				kafkaSource("dbserver1.public.players"),
+				WatermarkStrategy.noWatermarks(),
+				"players")
+				.map(DebeziumEnvelope::parsePlayer)
+				.returns(Player.class)
+				.filter(p -> p != null)
+				.print("PLAYER");
+		env.fromSource(
+				kafkaSource("dbserver1.public.ranks"),
+				WatermarkStrategy.noWatermarks(),
+				"ranks")
+				.map(DebeziumEnvelope::parseRank)
+				.returns(Rank.class)
+				.filter(r -> r != null)
+				.print("RANK");
+		
+		env.execute("match-facts-parse-test");
 	}
 
 	private static KafkaSource<String> kafkaSource (String topic) {
