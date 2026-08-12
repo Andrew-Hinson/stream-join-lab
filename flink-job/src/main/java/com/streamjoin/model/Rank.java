@@ -10,4 +10,13 @@ public class Rank {
     public int wins;
     public int losses;
     public Instant updatedAt;
+
+    @Override
+    public String toString() {
+        return "Rank{playerId=" + id
+                + ", tier=" + rankTier
+                + ", div=" + rankDivision
+                + ", pts=" +rankPoints
+                + ", updatedAt=" + updatedAt + "}";
+    }
 }
