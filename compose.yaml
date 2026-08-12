@@ -106,6 +106,34 @@ services:
     command: >
       bash -c "pip install -q faker 'psycopg[binary]'
       && python data_generator.py"
+  
+  jobmanager:
+    build: ./flink-job
+    ports:
+      - "8081:8081"
+    command: standalone-job ==job-classname com.streamjoin.DataStreamJob
+    environment:
+      KAFKA_BOOTSTRAP: broker:29092
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        rest.address: jobmanager
+        rest.port: 8081
+    depends_on:
+      register-connector:
+        condition: service_completed_successfully
+      broker:
+        condition: service_started
+
+  taskmanager:
+    build: ./flink-job
+    command: taskmanager
+    environment:
+      KAFKA_BOOTSTRAP: broker:29092
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4
+    depends_on:
+      - jobmanager
 
 volumes:
   db_data:

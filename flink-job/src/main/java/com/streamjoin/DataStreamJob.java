@@ -23,13 +23,11 @@ import com.streamjoin.model.MatchEvent;
 import com.streamjoin.model.MatchParticipant;
 import com.streamjoin.model.Player;
 import com.streamjoin.model.Rank;
-import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.util.Objects;
@@ -39,7 +37,7 @@ public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
+		
 		env.fromSource(
 				kafkaSource("dbserver1.public.match_events"),
 				WatermarkStrategy.noWatermarks(),
@@ -78,8 +76,9 @@ public class DataStreamJob {
 	}
 
 	private static KafkaSource<String> kafkaSource (String topic) {
+		String bootstrapServers = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
 		return KafkaSource.<String>builder()
-			.setBootstrapServers("localhost:9092")
+			.setBootstrapServers(bootstrapServers)
 			.setTopics(topic)
 			.setGroupId("flink-stream-join")
 			.setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
