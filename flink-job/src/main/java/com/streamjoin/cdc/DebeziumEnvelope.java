@@ -58,7 +58,7 @@ public class DebeziumEnvelope {
         JsonNode row = after(json);
         if (row == null) return null;
         Rank r = new Rank();
-        r.playerId = row.get("player_id").asLong();
+        r.id = row.get("player_id").asLong();
         r.rankTier = row.get("rank_tier").asText();
         r.rankDivision = row.get("rank_division").asInt();
         r.rankPoints = row.get("rank_points").asInt();
