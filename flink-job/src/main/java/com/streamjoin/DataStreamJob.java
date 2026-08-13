@@ -29,6 +29,8 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 
 
 

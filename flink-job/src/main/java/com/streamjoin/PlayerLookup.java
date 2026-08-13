@@ -8,7 +8,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 
-public class PlayerLookup {
+public class PlayerLookup extends KeyedCoProcessFunction<Long, MatchParticipant, Player, String> {
+
     private transient ValueState<Player> playerState;
 
     @Override
@@ -19,20 +20,19 @@ public class PlayerLookup {
     }
     
     @Override
-    public void processElement1(MatchParticipant participant, Context ctx, Collector<String> out) {
+    public void processElement1(MatchParticipant participant, Context ctx, Collector<String> out) 
         throws Exception {
+        
             Player player = playerState.value();
             if (player == null) {
                 return;
-            }
-        }
+            } 
         out.collect(participant.playerId + " -> " + player.accountName);
     }
     
     @Override
-    public void processElement2(Player player, Context ctx, Collector<String> out) {
-        throws Exception {
-            playerState.update(player);
-        }
+    public void processElement2(Player player, Context ctx, Collector<String> out) throws Exception {
+        playerState.update(player);
+        
     }
 }
