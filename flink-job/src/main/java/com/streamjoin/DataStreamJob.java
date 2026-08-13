@@ -29,6 +29,8 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 
 
 
@@ -46,22 +48,30 @@ public class DataStreamJob {
 				.filter(e -> e != null)
 				.print("EVENT");
 
-		env.fromSource(
+		DataStream<MatchParticipant> participants = env.fromSource(
 				kafkaSource("dbserver1.public.match_participants"),
 				WatermarkStrategy.noWatermarks(),
 				"match_participants")
 				.map(DebeziumEnvelope::parseMatchParticipant)
 				.returns(MatchParticipant.class)
-				.filter(p -> p != null)
-				.print("PARTICIPANT");
-		env.fromSource(
+				.filter(p -> p != null);
+		
+		DataStream<Player> players = env.fromSource(
 				kafkaSource("dbserver1.public.players"),
 				WatermarkStrategy.noWatermarks(),
 				"players")
 				.map(DebeziumEnvelope::parsePlayer)
 				.returns(Player.class)
-				.filter(p -> p != null)
-				.print("PLAYER");
+				.filter(p -> p != null);
+
+		KeyedStream<MatchParticipant, Long> keyedParticipants = participants.keyBy(p -> p.playerId);
+		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
+		
+		keyedParticipants
+			.connect(keyedPlayers)
+			.process(new PlayerLookup())
+			.print("PLAYER_DIMENSION");
+
 		env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),
 				WatermarkStrategy.noWatermarks(),
