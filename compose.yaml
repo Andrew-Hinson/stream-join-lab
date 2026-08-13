@@ -90,16 +90,47 @@ services:
         condition: service_healthy
     restart: "no"
     entrypoint: ["/bin/sh", "/register.sh"]
+  silo:
+    image: pgsty/silo:RELEASE.2026-08-06T00-00-00Z
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9001"
+    volumes:
+      - silo_data:/data
+    healthcheck:
+      test: ["CMD", "silo", "healthcheck", "ready"]
+      interval: 5s
+      retries: 12
 
+  silo-init:
+    image: pgsty/silo:RELEASE.2026-08-06T00-00-00Z
+    depends_on:
+      silo:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "mcli alias set local http://silo:9000 admin password && mcli mb local/warehouse --ignore-existing"
+      
   iceberg-rest:
     image: apache/iceberg-rest-fixture:1.10.1
     ports:
       - "8181:8181"
     environment:
-      CATALOG_WAREHOUSE: file:///warehouse
-      CATALOG_URI: jdbc:sqlite:/warehouse/catalog.db
-    volumes:
-      - iceberg_warehouse:/warehouse
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://silo:9000
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+    depends_on:
+      silo-init:
+        condition: service_completed_successfully
 
 
   jobmanager:
@@ -110,11 +141,19 @@ services:
     environment:
       <<: *flink-props
       KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      ICEBERG_REST_URI: http://iceberg-rest:8181
+      ICEBERG_WAREHOUSE: s3://warehouse/
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      AWS_S3_ENDPOINT: http://silo:9000
     depends_on:
       register-connector:
         condition: service_completed_successfully
       broker:
         condition: service_started
+      iceberg-rest:
+        condition: service_healthy
 
   taskmanager:
     build: ./flink-job
@@ -122,6 +161,12 @@ services:
     environment:
       <<: *flink-props
       KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      ICEBERG_REST_URI: http://iceberg-rest:8181
+      ICEBERG_WAREHOUSE: s3://warehouse/
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      AWS_S3_ENDPOINT: http://silo:9000
     depends_on:
       - jobmanager
 
@@ -153,4 +198,4 @@ services:
       --count ${MATCH_COUNT:-50} --min-sleep 0.2 --max-sleep 1
 volumes:
   db_data:
-  iceberg_warehouse:
+  silo_data:
