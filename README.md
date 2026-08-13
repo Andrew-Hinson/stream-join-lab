@@ -1,4 +1,21 @@
-## WIP
+## Marvel Rivals Ranked Games Simulator
+This is a Kafka-Flink-Iceberg demo with the purpose to show in flight stream joins outputting to Iceberg with built in real time metrics visualizations.
+
+### How to use
+```docker compose up --build```
+
+WIP
+
+How it works
+- Docker Compose initializes postgres
+- Apache Kafka is stood up
+- Kafka Connect (debezium) is pointed at postgres
+- Flink jobmanager is stood up
+- Flink taskmanager is stood up
+- data_generator.py runs, seeding Postgres with 100 random players
+- match_participants.py runs, simulating game match results and writing to postgres
+- Kafka connect picks up cdc changes and publishes to corresponding Kafka topics
+- Flink job joins streams to produce "match facts" Iceberg table
 
 ### Common Commands
 
