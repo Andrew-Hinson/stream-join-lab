@@ -1,3 +1,11 @@
+x-flink-props: &flink-props
+  FLINK_PROPERTIES: |
+    jobmanager.rpc.address: jobmanager
+    rest.address: jobmanager
+    rest.port: 8081
+    taskmanager.numberOfTaskSlots: 4
+    execution.checkpointing.dir: file:///tmp/flink-checkpoint
+
 services:
   db:
     image: postgres:16
@@ -93,19 +101,15 @@ services:
     volumes:
       - iceberg_warehouse:/warehouse
 
-  
+
   jobmanager:
     build: ./flink-job
     ports:
       - "8081:8081"
     command: standalone-job --job-classname com.streamjoin.DataStreamJob
     environment:
+      <<: *flink-props
       KAFKA_BOOTSTRAP_SERVERS: broker:29092
-      FLINK_PROPERTIES: |
-        jobmanager.rpc.address: jobmanager
-        rest.address: jobmanager
-        rest.port: 8081
-        execution.checkpointing.dir: file:///tmp/flink-checkpoints
     depends_on:
       register-connector:
         condition: service_completed_successfully
@@ -116,10 +120,8 @@ services:
     build: ./flink-job
     command: taskmanager
     environment:
+      <<: *flink-props
       KAFKA_BOOTSTRAP_SERVERS: broker:29092
-      FLINK_PROPERTIES: |
-        jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 4
     depends_on:
       - jobmanager
 
