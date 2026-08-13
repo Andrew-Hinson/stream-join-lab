@@ -36,7 +36,7 @@ public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		
+		env.enableCheckpointing(10_000);	
 		env.fromSource(
 				kafkaSource("dbserver1.public.match_events"),
 				WatermarkStrategy.noWatermarks(),
