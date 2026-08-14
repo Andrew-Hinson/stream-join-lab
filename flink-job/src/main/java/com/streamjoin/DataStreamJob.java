@@ -67,11 +67,17 @@ public class DataStreamJob {
 		KeyedStream<MatchParticipant, Long> keyedParticipants = participants.keyBy(p -> p.playerId);
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
+		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
 
 		keyedParticipants
 			.connect(keyedPlayers)
 			.process(new PlayerLookup())
 			.print("PLAYER_DIMENSION");
+		
+		keyedParticipantsByMatch
+			.connect(keyedEvents)
+			.process(new MatchJoin())
+			.print("FACTS");
 
 		env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),
