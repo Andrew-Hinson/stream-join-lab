@@ -31,6 +31,7 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
+import com.streamjoin.model.MatchFacts;
 
 
 
@@ -68,6 +69,7 @@ public class DataStreamJob {
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
 		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
+	
 
 		keyedParticipants
 			.connect(keyedPlayers)
@@ -77,6 +79,13 @@ public class DataStreamJob {
 		keyedParticipantsByMatch
 			.connect(keyedEvents)
 			.process(new MatchJoin());
+		
+		DataStream<MatchFacts> facts = keyedParticipantsByMatch
+			.connect(keyedEvents)
+			.process(new MatchJoin());
+
+		KeyedStream<MatchFacts, Long> keyedFacts = facts.keyBy(f -> f.playerId);
+	
 
 		DataStream<Rank> ranks = env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),
@@ -86,6 +95,9 @@ public class DataStreamJob {
 				.returns(Rank.class)
 				.filter(r -> r != null);
 		
+				
+		KeyedStream<Rank, Long> keyedRanks = ranks.keyBy(r -> r.id);
+
 		env.execute("match-facts-parse-test");
 	}
 
