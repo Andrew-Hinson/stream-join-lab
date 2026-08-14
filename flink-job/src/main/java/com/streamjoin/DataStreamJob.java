@@ -39,38 +39,45 @@ public class DataStreamJob {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.enableCheckpointing(10_000);	
-		env.fromSource(
-				kafkaSource("dbserver1.public.match_events"),
-				WatermarkStrategy.noWatermarks(),
-				"match_events")
-				.map(DebeziumEnvelope::parseMatchEvent)
-				.returns(MatchEvent.class)
-				.filter(e -> e != null)
-				.print("EVENT");
+
+		DataStream<MatchEvent> events = env.fromSource(
+			kafkaSource("dbserver1.public.match_events"),
+			WatermarkStrategy.noWatermarks(),
+			"match_events")
+			.map(DebeziumEnvelope::parseMatchEvent)
+			.returns(MatchEvent.class)
+			.filter(e -> e != null);
 
 		DataStream<MatchParticipant> participants = env.fromSource(
-				kafkaSource("dbserver1.public.match_participants"),
-				WatermarkStrategy.noWatermarks(),
-				"match_participants")
-				.map(DebeziumEnvelope::parseMatchParticipant)
-				.returns(MatchParticipant.class)
-				.filter(p -> p != null);
+			kafkaSource("dbserver1.public.match_participants"),
+			WatermarkStrategy.noWatermarks(),
+			"match_participants")
+			.map(DebeziumEnvelope::parseMatchParticipant)
+			.returns(MatchParticipant.class)
+			.filter(p -> p != null);
 		
 		DataStream<Player> players = env.fromSource(
-				kafkaSource("dbserver1.public.players"),
-				WatermarkStrategy.noWatermarks(),
-				"players")
-				.map(DebeziumEnvelope::parsePlayer)
-				.returns(Player.class)
-				.filter(p -> p != null);
+			kafkaSource("dbserver1.public.players"),
+			WatermarkStrategy.noWatermarks(),
+			"players")
+			.map(DebeziumEnvelope::parsePlayer)
+			.returns(Player.class)
+			.filter(p -> p != null);
 
 		KeyedStream<MatchParticipant, Long> keyedParticipants = participants.keyBy(p -> p.playerId);
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
-		
+		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
+		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
+
 		keyedParticipants
 			.connect(keyedPlayers)
 			.process(new PlayerLookup())
 			.print("PLAYER_DIMENSION");
+		
+		keyedParticipantsByMatch
+			.connect(keyedEvents)
+			.process(new MatchJoin())
+			.print("FACTS");
 
 		env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),

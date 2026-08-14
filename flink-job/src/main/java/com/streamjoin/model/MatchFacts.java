@@ -28,4 +28,19 @@ public class MatchFacts {
 
     // set by Flink at emit time
     public Instant ingestedAt;
+    
+    @Override
+    public String toString() {
+        return "MatchFacts{"        
+        + "matchId=" + matchId
+        + ", mapName=" + mapName
+        + ", startedAt=" + startedAt
+        + ", playerId=" + playerId
+        + ", heroPlayed=" + heroPlayed
+        + ", team=" + team
+        + ", kills=" + kills
+        + ", deaths=" + deaths
+        + ", result=" + result
+        + "}";
+    }
 }
