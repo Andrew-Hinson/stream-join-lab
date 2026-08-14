@@ -41,6 +41,9 @@ public class MatchFacts {
         + ", kills=" + kills
         + ", deaths=" + deaths
         + ", result=" + result
+        + ", rankTierAtMatchStart=" + rankTierAtMatchStart
+        + ", rankDivisionAtMatchStart=" + rankDivisionAtMatchStart
+        + ", rankPointsAtMatchStart=" + rankPointsAtMatchStart
         + "}";
     }
 }

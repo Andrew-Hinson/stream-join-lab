@@ -76,9 +76,6 @@ public class DataStreamJob {
 			.process(new PlayerLookup())
 			.print("PLAYER_DIMENSION");
 		
-		keyedParticipantsByMatch
-			.connect(keyedEvents)
-			.process(new MatchJoin());
 		
 		DataStream<MatchFacts> facts = keyedParticipantsByMatch
 			.connect(keyedEvents)
@@ -97,6 +94,11 @@ public class DataStreamJob {
 		
 				
 		KeyedStream<Rank, Long> keyedRanks = ranks.keyBy(r -> r.id);
+		
+		keyedFacts
+			.connect(keyedRanks)
+			.process(new RankAsOf())
+			.print("FACTS");
 
 		env.execute("match-facts-parse-test");
 	}
