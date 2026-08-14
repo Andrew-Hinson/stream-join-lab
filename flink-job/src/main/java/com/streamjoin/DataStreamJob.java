@@ -76,17 +76,15 @@ public class DataStreamJob {
 		
 		keyedParticipantsByMatch
 			.connect(keyedEvents)
-			.process(new MatchJoin())
-			.print("FACTS");
+			.process(new MatchJoin());
 
-		env.fromSource(
+		DataStream<Rank> ranks = env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),
 				WatermarkStrategy.noWatermarks(),
 				"ranks")
 				.map(DebeziumEnvelope::parseRank)
 				.returns(Rank.class)
-				.filter(r -> r != null)
-				.print("RANK");
+				.filter(r -> r != null);
 		
 		env.execute("match-facts-parse-test");
 	}
