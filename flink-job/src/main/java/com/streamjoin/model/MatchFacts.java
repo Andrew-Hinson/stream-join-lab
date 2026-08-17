@@ -36,6 +36,7 @@ public class MatchFacts {
         + ", mapName=" + mapName
         + ", startedAt=" + startedAt
         + ", playerId=" + playerId
+        + ", accountName=" + accountName
         + ", heroPlayed=" + heroPlayed
         + ", team=" + team
         + ", kills=" + kills
@@ -44,6 +45,7 @@ public class MatchFacts {
         + ", rankTierAtMatchStart=" + rankTierAtMatchStart
         + ", rankDivisionAtMatchStart=" + rankDivisionAtMatchStart
         + ", rankPointsAtMatchStart=" + rankPointsAtMatchStart
+        + ", ingestedAt=" + ingestedAt
         + "}";
     }
 }

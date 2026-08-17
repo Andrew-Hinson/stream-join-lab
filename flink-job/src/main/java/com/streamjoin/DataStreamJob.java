@@ -32,6 +32,7 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import com.streamjoin.model.MatchFacts;
+import java.time.Instant;
 
 
 
@@ -68,16 +69,18 @@ public class DataStreamJob {
 		KeyedStream<MatchParticipant, Long> keyedParticipants = participants.keyBy(p -> p.playerId);
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
-		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
-	
 
 		keyedParticipants
 			.connect(keyedPlayers)
 			.process(new PlayerLookup())
 			.print("PLAYER_DIMENSION");
 		
+		DataStream<MatchParticipant> enrichedParticipants = keyedParticipants
+			.connect(keyedPlayers)
+			.process(new PlayerLookup());
 		
-		DataStream<MatchFacts> facts = keyedParticipantsByMatch
+		DataStream<MatchFacts> facts = enrichedParticipants
+			.keyBy(p -> p.matchId)
 			.connect(keyedEvents)
 			.process(new MatchJoin());
 
@@ -98,6 +101,10 @@ public class DataStreamJob {
 		keyedFacts
 			.connect(keyedRanks)
 			.process(new RankAsOf())
+			.map(f -> {
+				f.ingestedAt = Instant.now();
+				return f;
+			})
 			.print("FACTS");
 
 		env.execute("match-facts-parse-test");

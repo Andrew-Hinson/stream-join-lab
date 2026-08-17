@@ -10,4 +10,5 @@ public class MatchParticipant {
     public Integer deaths;
     public Integer healing;
     public String result;
+    public String accountName;
 }

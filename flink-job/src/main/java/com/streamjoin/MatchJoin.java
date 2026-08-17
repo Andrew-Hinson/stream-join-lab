@@ -77,6 +77,7 @@ public class MatchJoin extends KeyedCoProcessFunction<Long, MatchParticipant, Ma
         f.endedAt = e.endedAt;
         f.winningTeam = e.winningTeam;
         f.playerId = p.playerId;
+        f.accountName = p.accountName;
         f.team = p.team;
         f.heroPlayed = p.heroPlayed;
         f.kills = p.kills;
