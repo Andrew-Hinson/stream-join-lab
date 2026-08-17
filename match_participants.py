@@ -31,12 +31,6 @@ INSERT_MATCH_PARTICIPANT_SQL = f"""
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """
 
-SELECT_RANDOM_PLAYERS_SQL = f"""
-    SELECT id FROM players
-    ORDER BY random()
-    LIMIT 12;
-"""
-
 
 RANKS_TABLE = "ranks"
 RANKS_COLUMNS = ("player_id", "rank_tier", "rank_division", "rank_points", "wins", "losses", "updated_at")
@@ -144,9 +138,8 @@ class MatchEvent:
 
 def get_players(conn: psycopg.Connection) -> list[int]:
     with conn.cursor() as cur:
-        cur.execute(SELECT_RANDOM_PLAYERS_SQL)
-        rows = cur.fetchall()
-    return [row[0] for row in rows]
+        cur.execute("SELECT id FROM players")
+        return [row[0] for row in cur.fetchall()]
 
 def assign_teams_and_result(players: list):
     shuffled = players[:]
@@ -194,15 +187,16 @@ def insert_match(conn, match: MatchEvent) -> int:
             ], 
         )
         for p in match.participants:
-            apply_rank(cur, p.player_id, p.result)
+            apply_rank(cur, p.player_id, p.result, match.ended_at)
     conn.commit()
     return match_id 
 
-def build_match(player_ids: list[int]) -> MatchEvent:
+def build_match(player_ids: list[int], now_sim: datetime) -> MatchEvent:
     team_0, team_1, winning_team = assign_teams_and_result(player_ids)
     duration = random.randint(300, 1200)
-    started_at = datetime.now(timezone.utc) - timedelta(seconds=duration)
-    ended_at = datetime.now(timezone.utc)
+    started_at = now_sim 
+    ended_at = now_sim + timedelta(seconds=duration)
+
     match = MatchEvent(
         map_name=random.choice(MAPS),
         duration=duration,
@@ -213,23 +207,7 @@ def build_match(player_ids: list[int]) -> MatchEvent:
     match.participants = build_participants(team_0, team_1, winning_team)
     return match
     
-def simulate_match(conn: psycopg.Connection):
-    player_ids = get_players(conn)
-    if len(player_ids) < 12:
-        print(f"Only {len(player_ids)} players found, need 12. Skipping.")
-        return None
-    
-    match = build_match(player_ids)
-    try:
-        match_id = insert_match(conn, match)
-        print(f"Inserted match {match_id} map={match.map_name} winning_team={match.winning_team}")
-        return match_id
-    except Exception as e:
-        conn.rollback()
-        print(f"Match insert failed, rolled back: {e}")
-        return None
-
-def apply_rank(cur, player_id: int, result: str):
+def apply_rank(cur, player_id: int, result: str, updated_at: datetime):
     cur.execute(SELECT_RANKS_SQL, (player_id,))
     row = cur.fetchone()
     if row is None:
@@ -247,7 +225,7 @@ def apply_rank(cur, player_id: int, result: str):
 
     cur.execute(
         INSERT_RANKS_SQL,
-        (player_id, tier, div, pts, wins, losses, datetime.now(timezone.utc)),
+        (player_id, tier, div, pts, wins, losses, updated_at),
     )
 
 
@@ -262,8 +240,42 @@ def derive_tier_and_division(pts: int) -> tuple[str, int]:
     division = DIVISIONS_PER_TIER - (within // PTS_PER_DIVISION)
     return TIERS[tier_idx], division
     
+def take_roster(free: set[int], n: int = 12) -> list[int]:
+    if len(free) < n:
+        return []
+    roster = random.sample(tuple(free), n)
+    free.difference_update(roster)
+    return roster
 
+def occupy_roster(busy: dict, roster: list[int], ended_at: datetime) -> None:
+    for pid in roster:
+        busy[pid] = ended_at
 
+def release_roster(free: set[int], busy: dict, roster: list[int]) -> None:
+    for pid in roster:
+        busy.pop(pid, None)
+        free.add(pid)
+
+def start_match(free, busy, now_sim) -> MatchEvent | None:
+    roster = take_roster(free)
+    if not roster:
+        return None
+    match = build_match(roster, now_sim)
+    occupy_roster(busy, roster, match.ended_at)
+    return match
+
+def finish_match (conn, free, busy, match):
+    roster = [p.player_id for p in match.participants]
+    try:
+        match_id = insert_match(conn, match)
+        release_roster(free, busy, roster)
+        return match_id
+    except Exception as e:
+        release_roster(free, busy, roster)
+        conn.rollback()
+        print(f"Match insert failed, rolled back: {e}")
+        return None
+        
 def main():
     parser = argparse.ArgumentParser(description="Simulating Marvel Rivals matches into Postgres")
     parser.add_argument("--dsn", default=os.environ.get("DB_APP_WRITER_URL")) 
@@ -276,11 +288,30 @@ def main():
         raise SystemExit("DATABASE_URL environment variable is required")
     
     conn = psycopg.connect(args.dsn)
+    free: set[int] = set(get_players(conn))
+    if len(free) < 12:
+        raise SystemExit(f"Need 12 players, got {len(free)}")
+    busy: dict[int, datetime] = {}
+    now_sim = datetime.now(timezone.utc)
+    in_flight: list[MatchEvent] = []
+    inserted = 0
     try:
-        for i in range(args.count):
-            simulate_match(conn)
-            if i < args.count - 1:
-                time.sleep(random.uniform(args.min_sleep,args.max_sleep))
+        while inserted < args.count:
+            while len(free) >= 12 and inserted + len(in_flight) < args.count:
+                match = start_match(free, busy, now_sim)
+                if match is None:
+                    break
+                in_flight.append(match)
+            if not in_flight:
+                break
+            
+            in_flight.sort(key=lambda m: m.ended_at)
+            done = in_flight.pop(0)
+            now_sim = done.ended_at
+            finish_match(conn, free, busy, done)
+            inserted += 1
+            if inserted < args.count:
+                time.sleep(random.uniform(args.min_sleep, args.max_sleep)) 
     finally:
         conn.close()
 

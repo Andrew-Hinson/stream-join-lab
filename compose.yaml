@@ -195,7 +195,7 @@ services:
       DB_APP_WRITER_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     command: >
       uv run --frozen --no-sync match_participants.py
-      --count ${MATCH_COUNT:-50} --min-sleep 0.2 --max-sleep 1
+      --count ${MATCH_COUNT:-200} --min-sleep 0.2 --max-sleep 1
 volumes:
   db_data:
   silo_data:

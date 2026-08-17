@@ -8,7 +8,7 @@ from faker import Faker
 
 TABLE = "players"
 COLUMNS = ("account_name", "email", "created_at", "account_status", "deleted_at")
-NUM_PLAYERS = 100
+NUM_PLAYERS = 48
 INSERT_SQL = f"""
     INSERT INTO {TABLE} ({", ".join(COLUMNS)})
     VALUES (%s, %s, %s, %s, %s)

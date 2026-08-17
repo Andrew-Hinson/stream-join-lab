@@ -31,6 +31,7 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
+import com.streamjoin.model.MatchFacts;
 
 
 
@@ -68,26 +69,37 @@ public class DataStreamJob {
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
 		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
+	
 
 		keyedParticipants
 			.connect(keyedPlayers)
 			.process(new PlayerLookup())
 			.print("PLAYER_DIMENSION");
 		
-		keyedParticipantsByMatch
+		
+		DataStream<MatchFacts> facts = keyedParticipantsByMatch
 			.connect(keyedEvents)
-			.process(new MatchJoin())
-			.print("FACTS");
+			.process(new MatchJoin());
 
-		env.fromSource(
+		KeyedStream<MatchFacts, Long> keyedFacts = facts.keyBy(f -> f.playerId);
+	
+
+		DataStream<Rank> ranks = env.fromSource(
 				kafkaSource("dbserver1.public.ranks"),
 				WatermarkStrategy.noWatermarks(),
 				"ranks")
 				.map(DebeziumEnvelope::parseRank)
 				.returns(Rank.class)
-				.filter(r -> r != null)
-				.print("RANK");
+				.filter(r -> r != null);
 		
+				
+		KeyedStream<Rank, Long> keyedRanks = ranks.keyBy(r -> r.id);
+		
+		keyedFacts
+			.connect(keyedRanks)
+			.process(new RankAsOf())
+			.print("FACTS");
+
 		env.execute("match-facts-parse-test");
 	}
 
