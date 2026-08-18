@@ -40,6 +40,7 @@ public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		MatchFacts.ensureTable();
 		env.enableCheckpointing(10_000);	
 
 		DataStream<MatchEvent> events = env.fromSource(
@@ -70,11 +71,6 @@ public class DataStreamJob {
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
 
-		keyedParticipants
-			.connect(keyedPlayers)
-			.process(new PlayerLookup())
-			.print("PLAYER_DIMENSION");
-		
 		DataStream<MatchParticipant> enrichedParticipants = keyedParticipants
 			.connect(keyedPlayers)
 			.process(new PlayerLookup());
@@ -105,9 +101,9 @@ public class DataStreamJob {
 				f.ingestedAt = Instant.now();
 				return f;
 			})
-			.print("FACTS");
+			.print("MATCH_FACTS");
 
-		env.execute("match-facts-parse-test");
+		env.execute("match-facts-job");
 	}
 
 	private static KafkaSource<String> kafkaSource (String topic) {
