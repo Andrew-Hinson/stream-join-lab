@@ -10,6 +10,11 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
+import java.time.ZoneOffset;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
+import org.apache.flink.table.data.TimestampData;
 
 
 public class MatchFacts {
@@ -61,6 +66,58 @@ public class MatchFacts {
         + ", winningTeam=" + winningTeam
         + ", endedAt=" + endedAt
         + "}";
+    }
+    public static Schema icebergSchema() {
+        return new Schema(
+        Types.NestedField.optional(1, "match_id", Types.LongType.get()),
+        Types.NestedField.optional(2, "map_name", Types.StringType.get()),
+        Types.NestedField.optional(3, "match_duration_seconds", Types.IntegerType.get()),
+        Types.NestedField.optional(4, "started_at", Types.TimestampType.withoutZone()),
+        Types.NestedField.optional(5, "ended_at", Types.TimestampType.withoutZone()),
+        Types.NestedField.optional(6, "winning_team", Types.IntegerType.get()),
+        Types.NestedField.optional(7, "player_id", Types.LongType.get()),
+        Types.NestedField.optional(8, "account_name", Types.StringType.get()),
+        Types.NestedField.optional(9, "team", Types.IntegerType.get()),
+        Types.NestedField.optional(10, "hero_played", Types.StringType.get()),
+        Types.NestedField.optional(11, "kills", Types.IntegerType.get()),
+        Types.NestedField.optional(12, "deaths", Types.IntegerType.get()),
+        Types.NestedField.optional(13, "healing", Types.IntegerType.get()),
+        Types.NestedField.optional(14, "result", Types.StringType.get()),
+        Types.NestedField.optional(15, "rank_tier_at_match_start", Types.StringType.get()),
+        Types.NestedField.optional(16, "rank_division_at_match_start", Types.IntegerType.get()),
+        Types.NestedField.optional(17, "rank_points_at_match_start", Types.IntegerType.get()),
+        Types.NestedField.optional(18, "ingested_at", Types.TimestampType.withoutZone())); 
+    }
+    
+    public RowData toRowData() {
+        GenericRowData row = new GenericRowData(18);
+        row.setField(0, matchId);
+        row.setField(1, str(mapName));
+        row.setField(2, matchDurationSeconds);
+        row.setField(3, ts(startedAt));
+        row.setField(4, ts(endedAt));
+        row.setField(5, winningTeam);
+        row.setField(6, playerId);
+        row.setField(7, str(accountName));
+        row.setField(8, team);
+        row.setField(9, str(heroPlayed));
+        row.setField(10, kills);
+        row.setField(11, deaths);
+        row.setField(12, healing);
+        row.setField(13, str(result));
+        row.setField(14, str(rankTierAtMatchStart));
+        row.setField(15, rankDivisionAtMatchStart);
+        row.setField(16, rankPointsAtMatchStart);
+        row.setField(17, ts(ingestedAt));
+        return row;
+    }
+    
+    private static StringData str(String s) {
+        return s == null ? null : StringData.fromString(s);
+    }
+    
+    private static TimestampData ts(Instant instant) {
+        return instant == null ? null : TimestampData.fromInstant(instant);
     }
     
     public static void ensureTable() throws Exception {
