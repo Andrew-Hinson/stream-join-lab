@@ -24,6 +24,9 @@ import com.streamjoin.model.MatchParticipant;
 import com.streamjoin.model.Player;
 import com.streamjoin.model.Rank;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.iceberg.flink.TableLoader;
+import org.apache.iceberg.flink.sink.FlinkSink;
+import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -33,6 +36,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import com.streamjoin.model.MatchFacts;
 import java.time.Instant;
+import org.apache.iceberg.flink.FlinkSchemaUtil;
 
 
 
@@ -94,14 +98,26 @@ public class DataStreamJob {
 				
 		KeyedStream<Rank, Long> keyedRanks = ranks.keyBy(r -> r.id);
 		
-		keyedFacts
+		DataStream<MatchFacts> matchFacts = keyedFacts
 			.connect(keyedRanks)
 			.process(new RankAsOf())
 			.map(f -> {
 				f.ingestedAt = Instant.now();
 				return f;
-			})
-			.print("MATCH_FACTS");
+			});
+		
+		matchFacts.print("MATCH_FACTS");
+	
+		TableLoader tableLoader = TableLoader.fromCatalog(
+			MatchFacts.catalogLoader(), MatchFacts.TABLE_ID);
+		
+		FlinkSink.builderFor(
+			matchFacts,
+			MatchFacts::toRowData,
+			FlinkCompatibilityUtil.toTypeInfo(
+				FlinkSchemaUtil.convert(MatchFacts.icebergSchema())))
+			.tableLoader(tableLoader)
+			.append();
 
 		env.execute("match-facts-job");
 	}

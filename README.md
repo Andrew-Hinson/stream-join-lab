@@ -43,6 +43,9 @@ docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
 ```
 
+Flink UI: 
+[flink-ui](http://localhost:8081)
+
 ## Kcat-cli
 Install `yay -S kcat-cli`
 
