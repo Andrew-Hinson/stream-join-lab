@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 import psycopg
 TIERS = ["bronze", "silver", "gold", "platinum", "diamond"]
-PTS_PER_DIV, DIVS_PER_TIER = 100, 5
+PTS_PER_DIV, DIVS_PER_TIER = 100, 4
 PTS_PER_TIER = PTS_PER_DIV * DIVS_PER_TIER
 WIN_DELTA, LOSS_DELTA = 30, -15
 TEAM_SIZE = 6

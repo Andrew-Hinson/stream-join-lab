@@ -32,6 +32,7 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import com.streamjoin.model.MatchFacts;
+import java.time.Instant;
 
 
 
@@ -39,6 +40,7 @@ public class DataStreamJob {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		MatchFacts.ensureTable();
 		env.enableCheckpointing(10_000);	
 
 		DataStream<MatchEvent> events = env.fromSource(
@@ -68,16 +70,13 @@ public class DataStreamJob {
 		KeyedStream<MatchParticipant, Long> keyedParticipants = participants.keyBy(p -> p.playerId);
 		KeyedStream<Player, Long> keyedPlayers = players.keyBy(p -> p.id);
 		KeyedStream<MatchEvent, Long> keyedEvents = events.keyBy(e -> e.id);
-		KeyedStream<MatchParticipant, Long> keyedParticipantsByMatch = participants.keyBy(p -> p.matchId);
-	
 
-		keyedParticipants
+		DataStream<MatchParticipant> enrichedParticipants = keyedParticipants
 			.connect(keyedPlayers)
-			.process(new PlayerLookup())
-			.print("PLAYER_DIMENSION");
+			.process(new PlayerLookup());
 		
-		
-		DataStream<MatchFacts> facts = keyedParticipantsByMatch
+		DataStream<MatchFacts> facts = enrichedParticipants
+			.keyBy(p -> p.matchId)
 			.connect(keyedEvents)
 			.process(new MatchJoin());
 
@@ -98,9 +97,13 @@ public class DataStreamJob {
 		keyedFacts
 			.connect(keyedRanks)
 			.process(new RankAsOf())
-			.print("FACTS");
+			.map(f -> {
+				f.ingestedAt = Instant.now();
+				return f;
+			})
+			.print("MATCH_FACTS");
 
-		env.execute("match-facts-parse-test");
+		env.execute("match-facts-job");
 	}
 
 	private static KafkaSource<String> kafkaSource (String topic) {
