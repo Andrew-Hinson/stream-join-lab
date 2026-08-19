@@ -1,0 +1,5 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+includeObjectNames:
+  - "kafka.server:type=BrokerTopicMetrics,*"
+  - "kafka.network:type=RequestMetrics,*"
