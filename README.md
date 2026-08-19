@@ -42,6 +42,8 @@ set -a && source .env && set +a
 docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
 ```
+check results after job is finished:
+```docker compose logs -f readback```
 
 Flink UI: 
 [flink-ui](http://localhost:8081)

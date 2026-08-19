@@ -196,6 +196,25 @@ services:
     command: >
       uv run --frozen --no-sync match_participants.py
       --count ${MATCH_COUNT:-400} --min-sleep 0.2 --max-sleep 1
+  
+  readback:
+    image: stream-join-python
+    build: .
+    restart: "no"
+    depends_on:
+      matches:
+        condition: service_completed_successfully
+    environment:
+      ICEBERG_REST_URI: http://iceberg-rest:8181
+      ICEBERG_WAREHOUSE: s3://warehouse/
+      AWS_S3_ENDPOINT: http://silo:9000
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      MATCH_COUNT: ${MATCH_COUNT:-400}
+    command: >
+      sh -c "sleep 40 && uv run --frozen --no-sync read_match_facts.py"
+
 volumes:
   db_data:
   silo_data:
