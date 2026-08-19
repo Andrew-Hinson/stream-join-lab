@@ -1,0 +1,19 @@
+pg_debezium_slot:
+  query: |
+    SELECT
+      slot_name,
+      pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::float8 AS lag_bytes,
+      CASE WHEN active THEN 1 ELSE 0 END AS active
+    FROM pg_replication_slots
+    WHERE slot_name = 'debezium_slot'
+  master: true
+  metrics:
+    - slot_name:
+        usage: "LABEL"
+        description: "Replication slot name"
+    - lag_bytes:
+        usage: "GAUGE"
+        description: "Confirmed LSN lag in bytes"
+    - active:
+        usage: "GAUGE"
+        description: "1 if the slot is active, else 0"

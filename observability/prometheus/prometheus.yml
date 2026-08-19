@@ -16,3 +16,16 @@ scrape_configs:
       - targets:
           - jobmanager:9249
           - taskmanager:9249
+  - job_name: kafka-jmx
+    static_configs:
+      - targets:
+          - broker:7071
+  - job_name: connect-jmx
+    static_configs:
+      - targets:
+          - connect:7072
+  - job_name: silo
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets:
+          - silo:9000
