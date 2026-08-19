@@ -61,6 +61,21 @@ To check results, wait until `matches` has exited, then:
 docker compose logs readback
 ```
 
+## Local UIs and endpoints
+
+`localhost` ports are published from Compose services. The browser hits the host; the process runs inside that container. Other containers on the Compose network use the service name (`grafana`, `prometheus`, `jobmanager`, …), not `localhost`.
+
+| Open | Compose service | Inside the container |
+|---|---|---|
+| [http://localhost:3000](http://localhost:3000) | `grafana` | Grafana. Anonymous Pipeline health dashboard. |
+| [http://localhost:9090](http://localhost:9090) | `prometheus` | Prometheus. Metric queries and targets. |
+| [http://localhost:8081](http://localhost:8081) | `jobmanager` | Flink Web UI. Job, checkpoints, backpressure. |
+| [http://localhost:9001](http://localhost:9001) | `silo` | Silo/MinIO console (`admin` / `password`). Object browser for the warehouse bucket. |
+| [http://localhost:9000](http://localhost:9000) | `silo` | S3 API (not a UI). Iceberg Parquet lives here. |
+| [http://localhost:8083](http://localhost:8083) | `connect` | Kafka Connect REST (not a UI). Debezium connector status. |
+| [http://localhost:8181](http://localhost:8181) | `iceberg-rest` | Iceberg REST catalog (not a UI). Table metadata. |
+
+No browser UI: Kafka (`broker`, host `localhost:9092`) and Postgres (`db`, host port from `POSTGRES_PORT` in `.env`). Use `kcat` / `psql` as below.
 
 ## Verifying the pipeline
 
@@ -99,8 +114,6 @@ set -a && source .env && set +a
 docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
 ```
-
-**Flink UI:** [http://localhost:8081](http://localhost:8081)
 
 ## Manual Kafka inspection (kcat)
 

@@ -1,0 +1,17 @@
+groups:
+  - name: pipeline
+    rules:
+      - alert: Checkpoint duration high
+        expr: flink_jobmanager_job_lastCheckpointDuration > 10000
+        for: 2m
+      - alert: Consumer lag high
+        expr: kafka_consumergroup_lag{consumergroup="flink-stream-join",topic=~"dbserver1\\.public\\..+"} > 1000
+        for: 2m
+      - alert: Streaming source lag high
+        expr: max({__name__=~"debezium_.*millisecondsbehindsource"}) > 5000
+        annotations:
+          summary: MilliSecondsBehindSource exceeded 5 seconds
+      - alert: Incomplete join rate
+        expr: rate(flink_taskmanager_job_task_operator_join_incomplete[5m]) > 0
+        annotations:
+          summary: join.incomplete rate is greater than zero
