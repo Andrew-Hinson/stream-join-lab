@@ -7,6 +7,9 @@ import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.Gauge;
+import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 
@@ -16,6 +19,9 @@ public class MatchJoin extends KeyedCoProcessFunction<Long, MatchParticipant, Ma
     private transient ListState<MatchParticipant> participantState;
     private static final long BUFFER_MS = 3_000;
     private transient ValueState<Long> timerState;
+    private transient Counter complete;
+    private transient Counter incomplete;
+    private transient int bufferedParticipants;
 
     @Override
     public void open(Configuration paremeters) {
@@ -25,12 +31,17 @@ public class MatchJoin extends KeyedCoProcessFunction<Long, MatchParticipant, Ma
                 new ValueStateDescriptor<>("event", MatchEvent.class));
         participantState = getRuntimeContext().getListState(
                 new ListStateDescriptor<>("participant", MatchParticipant.class));
+        MetricGroup join = getRuntimeContext().getMetricGroup().addGroup("join");
+        complete = join.counter("complete");
+        incomplete = join.counter("incomplete");
+        join.gauge("buffered_participants", (Gauge<Integer>) () -> bufferedParticipants);
     }
 
     @Override
     public void processElement1(MatchParticipant participant, Context ctx, Collector<MatchFacts> out)
             throws Exception {
-        participantState.add(participant); 
+        participantState.add(participant);
+        bufferedParticipants++;
         armTimer(ctx);
     }
 
@@ -59,10 +70,14 @@ public class MatchJoin extends KeyedCoProcessFunction<Long, MatchParticipant, Ma
             participants.add(p);
         }
         if (event != null && participants.size() == 12) {
+            complete.inc();
             for (MatchParticipant p : participants) {
                 out.collect(toFacts(event, p));
             }
+        } else {
+            incomplete.inc();
         }
+        bufferedParticipants -= participants.size();
         eventState.clear();
         participantState.clear();
         timerState.clear();
