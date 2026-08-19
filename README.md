@@ -1,6 +1,6 @@
 ## Marvel Rivals Ranked Games Simulator
 
-This is a Kafka-Flink-Iceberg demo with the purpose to show in flight stream joins outputting to Iceberg with built in real time metrics visualizations.
+A Kafka → Debezium → Flink → Iceberg CDC pipeline demo. Simulates ranked Marvel Rivals matches, streams the writes out of Postgres via CDC, joins them in-flight with Flink, and lands enriched match facts in Iceberg. 
 
 ## Architecture
 
