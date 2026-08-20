@@ -1,0 +1,34 @@
+slice_name: Hero win rate
+viz_type: table
+params:
+  viz_type: table
+  query_mode: raw
+  all_columns:
+    - hero_played
+    - win_rate
+    - avg_kills
+    - avg_deaths
+  percent_metrics: []
+  metrics: []
+  groupby: []
+  adhoc_filters: []
+  row_limit: 100
+  order_by_cols:
+    - '["win_rate", false]'
+  column_config:
+    win_rate:
+      d3NumberFormat: ".1f"
+      suffix: "%"
+    avg_kills:
+      d3NumberFormat: ".2f"
+    avg_deaths:
+      d3NumberFormat: ".2f"
+  table_timestamp_format: smart_date
+  show_cell_bars: true
+  include_search: false
+  server_pagination: false
+  time_range: No filter
+cache_timeout: null
+uuid: 33c1b2c3-d4e5-4f60-8c33-ccccccccccc3
+version: 1.0.0
+dataset_uuid: 33a1b2c3-d4e5-4f60-8a33-aaaaaaaaaaa3

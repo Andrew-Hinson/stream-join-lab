@@ -1,0 +1,74 @@
+table_name: hero_win_rate
+main_dttm_col: null
+description: Hero win rate and KDA
+schema: demo
+catalog: iceberg
+sql: |
+  SELECT
+    hero_played,
+    ROUND(100e0 * AVG(IF(result = 'win', 1e0, 0e0)), 1) AS win_rate,
+    ROUND(AVG(CAST(kills AS DOUBLE)), 2) AS avg_kills,
+    ROUND(AVG(CAST(deaths AS DOUBLE)), 2) AS avg_deaths
+  FROM iceberg.demo.match_facts
+  GROUP BY 1
+  ORDER BY win_rate DESC
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+metrics:
+  - metric_name: count
+    verbose_name: COUNT(*)
+    metric_type: count
+    expression: COUNT(*)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+columns:
+  - column_name: hero_played
+    verbose_name: hero
+    is_dttm: false
+    is_active: true
+    type: VARCHAR
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: win_rate
+    verbose_name: win rate (%)
+    is_dttm: false
+    is_active: true
+    type: DOUBLE
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: avg_kills
+    verbose_name: avg kills
+    is_dttm: false
+    is_active: true
+    type: DOUBLE
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: avg_deaths
+    verbose_name: avg deaths
+    is_dttm: false
+    is_active: true
+    type: DOUBLE
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+version: 1.0.0
+uuid: 33a1b2c3-d4e5-4f60-8a33-aaaaaaaaaaa3
+database_uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c

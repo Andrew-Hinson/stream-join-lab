@@ -1,0 +1,63 @@
+table_name: player_leaderboard
+main_dttm_col: null
+description: Player wins and K/D
+schema: demo
+catalog: iceberg
+sql: |
+  SELECT
+    account_name,
+    COUNT_IF(result = 'win') AS wins,
+    ROUND(AVG(CAST(kills AS DOUBLE) / NULLIF(deaths, 0)), 2) AS kd
+  FROM iceberg.demo.match_facts
+  GROUP BY 1
+  ORDER BY wins DESC
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+metrics:
+  - metric_name: count
+    verbose_name: COUNT(*)
+    metric_type: count
+    expression: COUNT(*)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+columns:
+  - column_name: account_name
+    verbose_name: player
+    is_dttm: false
+    is_active: true
+    type: VARCHAR
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: wins
+    verbose_name: wins
+    is_dttm: false
+    is_active: true
+    type: BIGINT
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: kd
+    verbose_name: k/d
+    is_dttm: false
+    is_active: true
+    type: DOUBLE
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+version: 1.0.0
+uuid: 55a1b2c3-d4e5-4f60-8a55-aaaaaaaaaaa5
+database_uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c

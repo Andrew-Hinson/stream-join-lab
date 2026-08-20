@@ -1,0 +1,15 @@
+slice_name: Facts landed
+viz_type: big_number_total
+params:
+  metric: facts
+  adhoc_filters: []
+  subheader: Iceberg match_facts
+  y_axis_format: SMART_NUMBER
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  time_range: No filter
+  viz_type: big_number_total
+cache_timeout: null
+uuid: 11c1b2c3-d4e5-4f60-8c11-ccccccccccc1
+version: 1.0.0
+dataset_uuid: 11a1b2c3-d4e5-4f60-8a11-aaaaaaaaaaa1

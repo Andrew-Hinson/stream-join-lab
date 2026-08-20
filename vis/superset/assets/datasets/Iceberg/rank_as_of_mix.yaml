@@ -1,0 +1,63 @@
+table_name: rank_as_of_mix
+main_dttm_col: null
+description: Rank-as-of mix at match start
+schema: demo
+catalog: iceberg
+sql: |
+  SELECT
+    rank_tier_at_match_start,
+    rank_division_at_match_start,
+    COUNT(*) AS facts
+  FROM iceberg.demo.match_facts
+  GROUP BY 1, 2
+  ORDER BY 1, 2
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+metrics:
+  - metric_name: count
+    verbose_name: COUNT(*)
+    metric_type: count
+    expression: COUNT(*)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+columns:
+  - column_name: rank_tier_at_match_start
+    verbose_name: rank tier
+    is_dttm: false
+    is_active: true
+    type: VARCHAR
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: rank_division_at_match_start
+    verbose_name: rank division
+    is_dttm: false
+    is_active: true
+    type: INTEGER
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: facts
+    verbose_name: facts
+    is_dttm: false
+    is_active: true
+    type: BIGINT
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+version: 1.0.0
+uuid: 22a1b2c3-d4e5-4f60-8a22-aaaaaaaaaaa2
+database_uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c

@@ -1,0 +1,38 @@
+table_name: facts_landed
+main_dttm_col: null
+description: Iceberg match_facts row count
+schema: demo
+catalog: iceberg
+sql: |
+  SELECT COUNT(*) AS facts
+  FROM iceberg.demo.match_facts
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+metrics:
+  - metric_name: facts
+    verbose_name: facts
+    metric_type: null
+    expression: MAX(facts)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+columns:
+  - column_name: facts
+    verbose_name: facts
+    is_dttm: false
+    is_active: true
+    type: BIGINT
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+version: 1.0.0
+uuid: 11a1b2c3-d4e5-4f60-8a11-aaaaaaaaaaa1
+database_uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c
