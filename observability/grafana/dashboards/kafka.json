@@ -1,0 +1,429 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Symptoms",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Replication factor",
+      "type": "text",
+      "gridPos": { "h": 3, "w": 12, "x": 0, "y": 1 },
+      "options": {
+        "mode": "markdown",
+        "content": "This cluster has one broker and replication factor 1. Offline and under-replicated partition gauges stay 0 unless the broker is down. Treat those series as a production template, not a live failure mode."
+      }
+    },
+    {
+      "id": 20,
+      "title": "About lag derivative",
+      "type": "text",
+      "gridPos": { "h": 3, "w": 12, "x": 12, "y": 1 },
+      "options": {
+        "mode": "markdown",
+        "content": "Lag derivative is the slope of `flink-stream-join` lag over 5 minutes, in messages per second. Zero or negative means the consumer is keeping up or catching up. Positive means the backlog is growing. The page rule also requires lag above 200 and uses a 10-minute window."
+      }
+    },
+    {
+      "id": 3,
+      "title": "Kafka up",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "Down", "color": "red" },
+                "1": { "text": "Up", "color": "green" }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        { "expr": "max(up{job=\"kafka-jmx\"})", "legendFormat": "Kafka", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Offline partitions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        { "expr": "kafka_controller_kafkacontroller_value{name=\"OfflinePartitionsCount\"}", "legendFormat": "offline", "refId": "A" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Under-replicated partitions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 10, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        { "expr": "kafka_server_replicamanager_value{name=\"UnderReplicatedPartitions\"}", "legendFormat": "under-replicated", "refId": "A" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Consumer lag",
+      "description": "Committed-offset lag for flink-stream-join on CDC topics. 0 is healthy. Yellow is a backlog below the page floor (200). Red is at or above that floor; page only if lag derivative is also climbing.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 5, "x": 15, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "expr": "sum(kafka_consumergroup_lag{consumergroup=\"flink-stream-join\",topic=~\"dbserver1\\\\.public\\\\..+\"})",
+          "legendFormat": "lag",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Lag derivative",
+      "description": "Slope of consumer lag over 5 minutes (messages per second). Zero or negative: keeping up or catching up. Positive: backlog growing.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.000001 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "expr": "deriv(sum(kafka_consumergroup_lag{consumergroup=\"flink-stream-join\",topic=~\"dbserver1\\\\.public\\\\..+\"})[5m:])",
+          "legendFormat": "deriv",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Traffic",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "Messages in",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "ops" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_count{name=\"MessagesInPerSec\",topic=~\"dbserver1.public.*\"}[5m]))",
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Bytes in and out",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "Bps" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_count{name=\"BytesInPerSec\",topic=~\"dbserver1.public.*\"}[5m]))",
+          "legendFormat": "in {{topic}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_count{name=\"BytesOutPerSec\",topic=~\"dbserver1.public.*\"}[5m]))",
+          "legendFormat": "out {{topic}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Consumer lag by topic",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "suffix:messages" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (topic) (kafka_consumergroup_lag{consumergroup=\"flink-stream-join\",topic=~\"dbserver1\\\\.public\\\\..+\"})",
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Latency",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "panels": []
+    },
+    {
+      "id": 13,
+      "title": "Produce latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "ms" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "kafka_network_requestmetrics_mean{name=\"TotalTimeMs\",request=\"Produce\"}", "legendFormat": "mean", "refId": "A" },
+        { "expr": "kafka_network_requestmetrics_99thpercentile{name=\"TotalTimeMs\",request=\"Produce\"}", "legendFormat": "99th", "refId": "B" }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Fetch latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "ms" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "kafka_network_requestmetrics_mean{name=\"TotalTimeMs\",request=\"Fetch\"}", "legendFormat": "mean", "refId": "A" },
+        { "expr": "kafka_network_requestmetrics_99thpercentile{name=\"TotalTimeMs\",request=\"Fetch\"}", "legendFormat": "99th", "refId": "B" }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Internals",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "title": "Request queue",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "suffix:requests" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "kafka_network_requestchannel_value{name=\"RequestQueueSize\"}", "legendFormat": "queue", "refId": "A" }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "ISR shrinks",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "ops" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "rate(kafka_server_replicamanager_count{name=\"IsrShrinksPerSec\"}[5m])",
+          "legendFormat": "shrinks/s",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Partition count",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "kafka_server_replicamanager_value{name=\"PartitionCount\"}", "legendFormat": "partitions", "refId": "A" }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Active controller",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 27 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        { "expr": "kafka_controller_kafkacontroller_value{name=\"ActiveControllerCount\"}", "legendFormat": "controllers", "refId": "A" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["kafka"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Kafka",
+  "uid": "kafka",
+  "version": 1,
+  "weekStart": ""
+}

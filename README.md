@@ -63,7 +63,7 @@ docker compose logs readback
 
 ## View pipeline metrics
 
-Open the [Grafana Pipeline health dashboard](http://localhost:3000) at `http://localhost:3000`. The **Flink** dashboard is on the same Grafana instance. Query raw series in the [Prometheus expression browser](http://localhost:9090) at `http://localhost:9090`.
+Open the [Grafana Pipeline health dashboard](http://localhost:3000) at `http://localhost:3000`. The **Flink** and **Kafka** dashboards are on the same Grafana instance. Query raw series in the [Prometheus expression browser](http://localhost:9090) at `http://localhost:9090`. See [Pipeline alerting](docs/alerting.md) for page versus ticket rules.
 
 Lag by hop: Debezium lag is `MilliSecondsBehindSource` (connector delay behind Postgres). Slot lag is unread bytes on the `debezium_slot` replication slot. Kafka consumer lag is the `flink-stream-join` group on the change data capture (CDC) topics. Flink checkpoint duration is `lastCheckpointDuration` versus the 10s checkpoint interval.
 
