@@ -244,7 +244,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate({__name__=~\"debezium_.*totalnumberofeventseen\"}[5m]))",
+          "expr": "sum(rate({__name__=~\"debezium_.*totalnumberofeventsseen\"}[5m]))",
           "legendFormat": "events/s",
           "refId": "A"
         }
