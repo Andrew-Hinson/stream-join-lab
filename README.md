@@ -61,21 +61,13 @@ To check results, wait until `matches` has exited, then:
 docker compose logs readback
 ```
 
-## Local UIs and endpoints
+## View pipeline metrics
 
-`localhost` ports are published from Compose services. The browser hits the host; the process runs inside that container. Other containers on the Compose network use the service name (`grafana`, `prometheus`, `jobmanager`, …), not `localhost`.
+Open the [Grafana Pipeline health dashboard](http://localhost:3000) at `http://localhost:3000`. The **Flink** dashboard is on the same Grafana instance. Query raw series in the [Prometheus expression browser](http://localhost:9090) at `http://localhost:9090`.
 
-| Open | Compose service | Inside the container |
-|---|---|---|
-| [http://localhost:3000](http://localhost:3000) | `grafana` | Grafana. Anonymous Pipeline health dashboard. |
-| [http://localhost:9090](http://localhost:9090) | `prometheus` | Prometheus. Metric queries and targets. |
-| [http://localhost:8081](http://localhost:8081) | `jobmanager` | Flink Web UI. Job, checkpoints, backpressure. |
-| [http://localhost:9001](http://localhost:9001) | `silo` | Silo/MinIO console (`admin` / `password`). Object browser for the warehouse bucket. |
-| [http://localhost:9000](http://localhost:9000) | `silo` | S3 API (not a UI). Iceberg Parquet lives here. |
-| [http://localhost:8083](http://localhost:8083) | `connect` | Kafka Connect REST (not a UI). Debezium connector status. |
-| [http://localhost:8181](http://localhost:8181) | `iceberg-rest` | Iceberg REST catalog (not a UI). Table metadata. |
+Lag by hop: Debezium lag is `MilliSecondsBehindSource` (connector delay behind Postgres). Slot lag is unread bytes on the `debezium_slot` replication slot. Kafka consumer lag is the `flink-stream-join` group on the change data capture (CDC) topics. Flink checkpoint duration is `lastCheckpointDuration` versus the 10s checkpoint interval.
 
-No browser UI: Kafka (`broker`, host `localhost:9092`) and Postgres (`db`, host port from `POSTGRES_PORT` in `.env`). Use `kcat` / `psql` as below.
+Join-quality counters (`join.complete`, `join.incomplete`, player lookup misses, rank-as-of defaulted) are defined in the Flink job.
 
 ## Verifying the pipeline
 
