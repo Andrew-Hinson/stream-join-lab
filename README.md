@@ -1,6 +1,28 @@
 ## Marvel Rivals Ranked Games Simulator
 
-A Kafka → Debezium → Flink → Iceberg CDC pipeline demo. Simulates ranked Marvel Rivals matches, streams the writes out of Postgres via CDC, joins them in-flight with Flink, and lands enriched match facts in Iceberg.
+A Kafka → Debezium → Flink → Iceberg CDC pipeline. Simulates ranked Marvel Rivals matches, streams the writes out of Postgres via CDC, joins them in-flight with Flink, and lands enriched match facts in Iceberg.
+
+## Run
+
+MacOS, Linux, or Windows. A 16GB laptop is the intended box; set the Docker memory slider to at least 8 GiB. `./up` fails below 6 GiB.Needs Docker Desktop (or Engine + Compose v2) on m
+
+**Every `./up` is a Clean start:** it destroys Lab volumes, then builds and starts. First run is about 20 minutes (image pulls + Maven). Later runs are faster but still wipe data and replay matches. Use the URLs it prints — ports remap if 8088/3000/8081 are taken.
+
+Unzip or clone, `cd` into this folder, then:
+
+**macOS / Linux / WSL**
+
+```bash
+./up
+```
+
+**Windows**
+
+```bat
+.\up.cmd
+```
+
+`./up` waits until `match_facts` has at least one row (Ready), then opens [Match facts](http://127.0.0.1:8088/superset/dashboard/match-facts/) and [Grafana Pipeline health](http://127.0.0.1:3000/d/pipeline-health). Charts keep filling (default 400 matches, about 4800 facts). Stop with `./down` (or `.\down.cmd`).
 
 ## Architecture
 
@@ -47,13 +69,7 @@ flowchart LR
 | Trino | SQL engine over Iceberg |
 | Superset | Match facts vis — dashboards and SQL Lab |
 
-## Quickstart
-
-```bash
-docker compose up --build
-```
-
-This brings up Postgres, Kafka, Debezium, Flink, the Iceberg REST catalog, Silo (S3), Trino, and Superset, then:
+What `./up` starts:
 
 1. **Seed** inserts 48 players into Postgres
 2. **matches** simulates ranked games (12 players each) into Postgres — events, participants, rank updates
@@ -62,11 +78,9 @@ This brings up Postgres, Kafka, Debezium, Flink, the Iceberg REST catalog, Silo 
 5. Facts append to the Iceberg table `demo.match_facts` (Parquet on Silo)
 6. **Superset** queries that table through Trino
 
-Open [Match facts](http://localhost:8088/superset/dashboard/match-facts/) at `http://localhost:8088/superset/dashboard/match-facts/`. Charts start empty and fill as facts land. Expect about `12 * MATCH_COUNT` rows (default 4800). No assert.
-
 ## Query match facts
 
-SQL Lab is at `http://localhost:8088/sqllab`. Database: **Iceberg** (read-only). Catalog `iceberg`, schema `demo`.
+SQL Lab is on the Superset URL `./up` printed (`/sqllab`). Database: **Iceberg** (read-only). Catalog `iceberg`, schema `demo`.
 
 ```sql
 SELECT COUNT(*) AS facts
@@ -97,85 +111,47 @@ ORDER BY player_id, started_at
 LIMIT 20;
 ```
 
-## View pipeline metrics
+## Pipeline metrics
 
-Open the [Grafana Pipeline health dashboard](http://localhost:3000) at `http://localhost:3000`. The **Flink** and **Kafka** dashboards are on the same Grafana instance. Query raw series in the [Prometheus expression browser](http://localhost:9090) at `http://localhost:9090`. See [Pipeline alerting](docs/alerting.md) for page versus ticket rules.
+Grafana is the URL `./up` printed (`/d/pipeline-health`). Same instance has **Flink** and **Kafka** dashboards. Flink UI URL is printed, not opened. See [Pipeline alerting](docs/alerting.md) for page versus ticket rules.
 
-## Verifying the pipeline
+## Inspect
 
-**Confirm the CDC connector is running:**
+Use the printed URLs. Extra traffic: `docker compose --env-file .lab.env run --rm matches`. Kafka, Connect, Trino, and Prometheus are not published on the host.
+
+**CDC connector**
 
 ```bash
-curl -s http://localhost:8083/connectors/postgres-cdc/status | jq .
+docker compose --env-file .lab.env exec connect \
+  curl -s http://localhost:8083/connectors/postgres-cdc/status
 ```
 
-**List CDC topics:**
+**List CDC topics**
 
 ```bash
-docker compose exec broker /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+docker compose --env-file .lab.env exec broker \
+  /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
 ```
 
-**Watch a topic:**
+**Watch a topic**
 
 ```bash
-docker compose exec broker /opt/kafka/bin/kafka-console-consumer.sh \
+docker compose --env-file .lab.env exec broker \
+  /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic dbserver1.public.players \
   --from-beginning
 ```
 
-**Connect to Postgres:**
+**Postgres**
 
 ```bash
-set -a && source .env && set +a
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+docker compose --env-file .lab.env exec db psql -U demo -d stream_join_lab
 ```
 
-**Issue a manual change (to watch CDC propagate end-to-end):**
+**Manual change (watch CDC propagate)**
 
 ```bash
-set -a && source .env && set +a
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+docker compose --env-file .lab.env exec db psql -U demo -d stream_join_lab -c \
   "INSERT INTO players (account_name, email) VALUES ('cdc-test', 'cdc-test@example.com');"
-```
-
-## Manual Kafka inspection (kcat)
-
-Install [kcat](https://github.com/edenhill/kcat) (formerly kafkacat):
-
-**macOS**
-
-```bash
-brew install kcat
-```
-
-**Linux**
-
-```bash
-# Debian/Ubuntu
-sudo apt install kcat
-
-# Fedora
-sudo dnf install kcat
-
-# Arch
-sudo pacman -S kcat
-```
-
-Leave a consumer running in one terminal:
-
-```bash
-kcat -C -b localhost:9092 -t dbserver1.public.match_events -f '%s\n'
-```
-
-In a separate terminal, generate traffic:
-
-```bash
-./scripts/run_matches.sh --count 10
-```
-
-View broker metadata:
-
-```bash
-kcat -L -b localhost:9092
 ```

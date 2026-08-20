@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+LAB_ENV="$ROOT/.lab.env"
+
+if [[ -f "$LAB_ENV" ]]; then
+  docker compose --env-file "$LAB_ENV" down
+else
+  docker compose down
+fi

@@ -10,7 +10,7 @@ Severity is a Prometheus `severity` label: `page` (urgent and actionable) or `ti
 - **Flink** is job golden signals: uptime, restarts, records in and out, checkpoint duration, backpressure, operator time, heap, and GC.
 - **Kafka** is broker and consumer drill-down: replica gauges, `flink-stream-join` lag, messages and bytes, Produce and Fetch `TotalTimeMs`, request queue, and controller internals.
 
-Open [Pipeline health](http://localhost:3000/d/pipeline-health), [Flink](http://localhost:3000/d/flink/flink), or [Kafka](http://localhost:3000/d/kafka/kafka).
+Open **Pipeline health**, **Flink**, or **Kafka** on the Grafana URL `./up` printed (`/d/pipeline-health`, `/d/flink/flink`, `/d/kafka/kafka`).
 
 ## Severity table
 

@@ -1,14 +1,10 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-if [[ -f "$ROOT/.env" ]]; then
-  set -a
-  source "$ROOT/.env"
-  set +a
-fi
+#!/bin/sh
+set -eu
 
 CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
+POSTGRES_USER="${POSTGRES_USER:-demo}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-demo}"
+POSTGRES_DB="${POSTGRES_DB:-stream_join_lab}"
 
 echo "Waiting for Connect at $CONNECT_URL ..."
 until curl -sf "$CONNECT_URL" > /dev/null; do
