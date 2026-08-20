@@ -496,7 +496,7 @@
       ]
     }
   ],
-  "refresh": "10s",
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": ["pipeline"],
   "templating": {

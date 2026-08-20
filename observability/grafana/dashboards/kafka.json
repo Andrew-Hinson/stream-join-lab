@@ -18,10 +18,20 @@
       "id": 2,
       "title": "Replication factor",
       "type": "text",
-      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 1 },
+      "gridPos": { "h": 3, "w": 12, "x": 0, "y": 1 },
       "options": {
         "mode": "markdown",
         "content": "This cluster has one broker and replication factor 1. Offline and under-replicated partition gauges stay 0 unless the broker is down. Treat those series as a production template, not a live failure mode."
+      }
+    },
+    {
+      "id": 20,
+      "title": "About lag derivative",
+      "type": "text",
+      "gridPos": { "h": 3, "w": 12, "x": 12, "y": 1 },
+      "options": {
+        "mode": "markdown",
+        "content": "Lag derivative is the slope of `flink-stream-join` lag over 5 minutes, in messages per second. Zero or negative means the consumer is keeping up or catching up. Positive means the backlog is growing. The page rule also requires lag above 200 and uses a 10-minute window."
       }
     },
     {
@@ -112,15 +122,26 @@
     {
       "id": 6,
       "title": "Consumer lag",
+      "description": "Committed-offset lag for flink-stream-join on CDC topics. 0 is healthy. Yellow is a backlog below the page floor (200). Red is at or above that floor; page only if lag derivative is also climbing.",
       "type": "stat",
       "gridPos": { "h": 4, "w": 5, "x": 15, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
-        "defaults": { "unit": "short" },
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "value"
@@ -136,22 +157,33 @@
     {
       "id": 7,
       "title": "Lag derivative",
+      "description": "Slope of consumer lag over 5 minutes (messages per second). Zero or negative: keeping up or catching up. Positive: backlog growing.",
       "type": "stat",
       "gridPos": { "h": 4, "w": 4, "x": 20, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
-        "defaults": { "unit": "ops" },
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.000001 }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "value"
       },
       "targets": [
         {
-          "expr": "deriv(sum(kafka_consumergroup_lag{consumergroup=\"flink-stream-join\",topic=~\"dbserver1\\\\.public\\\\..+\"})[5m])",
+          "expr": "deriv(sum(kafka_consumergroup_lag{consumergroup=\"flink-stream-join\",topic=~\"dbserver1\\\\.public\\\\..+\"})[5m:])",
           "legendFormat": "deriv",
           "refId": "A"
         }
@@ -221,7 +253,7 @@
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
-        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "short" },
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "suffix:messages" },
         "overrides": []
       },
       "options": {
@@ -297,7 +329,7 @@
       "gridPos": { "h": 8, "w": 6, "x": 0, "y": 27 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
-        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "short" },
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "spanNulls": false }, "unit": "suffix:requests" },
         "overrides": []
       },
       "options": {
@@ -367,7 +399,7 @@
       ]
     }
   ],
-  "refresh": "10s",
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": ["kafka"],
   "templating": {
@@ -387,7 +419,7 @@
       }
     ]
   },
-  "time": { "from": "now-30m", "to": "now" },
+  "time": { "from": "now-5m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "Kafka",
