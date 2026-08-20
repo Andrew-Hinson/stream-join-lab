@@ -15,11 +15,9 @@ services:
     restart: always
     shm_size: 128mb
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "${POSTGRES_PORT}:5432"
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: stream_join_lab
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
@@ -32,16 +30,14 @@ services:
       - -c
       - max_replication_slots=10
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U demo -d stream_join_lab"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   broker:
-    image: apache/kafka:4.3.1
+    build: ./observability/kafka
     container_name: broker
-    ports:
-      - "9092:9092"
     expose:
       - "7071"
     environment:
@@ -62,7 +58,6 @@ services:
       KAFKA_NUM_PARTITIONS: 3
       KAFKA_OPTS: "-javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=7071:/opt/jmx/kafka.yml"
     volumes:
-      - ./observability/jmx/jmx_prometheus_javaagent-1.6.0.jar:/opt/jmx/jmx_prometheus_javaagent.jar:ro
       - ./observability/jmx/kafka.yml:/opt/jmx/kafka.yml:ro
     healthcheck:
       test: ["CMD-SHELL", "KAFKA_OPTS= /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
@@ -71,10 +66,8 @@ services:
       retries: 20
 
   connect:
-    image: debezium/connect:2.7.3.Final
+    build: ./observability/connect
     container_name: connect
-    ports:
-      - "8083:8083"
     expose:
       - "7072"
     environment:
@@ -90,18 +83,19 @@ services:
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
       KAFKA_OPTS: "-javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=7072:/opt/jmx/connect.yml"
     volumes:
-      - ./observability/jmx/jmx_prometheus_javaagent-1.6.0.jar:/opt/jmx/jmx_prometheus_javaagent.jar:ro
       - ./observability/jmx/connect.yml:/opt/jmx/connect.yml:ro
     depends_on:
       - broker
       - db
   register-connector:
     image: curlimages/curl:8.5.0
-    env_file: .env
     volumes:
       - ./scripts/register-connector.sh:/register.sh:ro
     environment:
       CONNECT_URL: http://connect:8083
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: stream_join_lab
     depends_on:
       connect:
         condition: service_started
@@ -111,9 +105,6 @@ services:
     entrypoint: ["/bin/sh", "/register.sh"]
   silo:
     image: pgsty/silo:RELEASE.2026-08-06T00-00-00Z
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password
@@ -135,11 +126,9 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - "mcli alias set local http://silo:9000 admin password && mcli mb local/warehouse --ignore-existing"
-      
+
   iceberg-rest:
     image: apache/iceberg-rest-fixture:1.10.1
-    ports:
-      - "8181:8181"
     environment:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
@@ -158,11 +147,10 @@ services:
       retries: 12
       start_period: 10s
 
-
   jobmanager:
     build: ./flink-job
     ports:
-      - "8081:8081"
+      - "127.0.0.1:${FLINK_PORT:-8081}:8081"
     command: standalone-job --job-classname com.streamjoin.DataStreamJob
     environment:
       <<: *flink-props
@@ -204,10 +192,9 @@ services:
     build: .
     image: stream-join-python
     environment:
-      DB_APP_WRITER_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_APP_WRITER_URL: postgresql://demo:demo@db:5432/stream_join_lab
     command: uv run --frozen --no-sync data_generator.py
-    
-    
+
   matches:
     depends_on:
       seed:
@@ -218,15 +205,13 @@ services:
     build: .
     image: stream-join-python
     environment:
-      DB_APP_WRITER_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_APP_WRITER_URL: postgresql://demo:demo@db:5432/stream_join_lab
     command: >
       uv run --frozen --no-sync match_participants.py
       --count ${MATCH_COUNT:-400} --min-sleep 0.2 --max-sleep 1
 
   prometheus:
     image: prom/prometheus
-    ports:
-      - "9090:9090"
     volumes:
       - ./observability/prometheus:/etc/prometheus:ro
     command:
@@ -234,9 +219,9 @@ services:
       - --storage.tsdb.retention.time=6h
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:11.6.16
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
@@ -248,8 +233,6 @@ services:
 
   trino:
     image: trinodb/trino:476
-    ports:
-      - "8080:8080"
     volumes:
       - ./vis/trino/catalog/iceberg.properties:/etc/trino/catalog/iceberg.properties:ro
     depends_on:
@@ -267,7 +250,7 @@ services:
   superset:
     build: ./vis/superset
     ports:
-      - "8088:8088"
+      - "127.0.0.1:${SUPERSET_PORT:-8088}:8088"
     environment:
       SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
       SUPERSET_SECRET_KEY: stream-join-lab-not-secret
@@ -281,9 +264,9 @@ services:
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter
     environment:
-      DATA_SOURCE_URI: db:5432/${POSTGRES_DB}?sslmode=disable
-      DATA_SOURCE_USER: ${POSTGRES_USER}
-      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD}
+      DATA_SOURCE_URI: db:5432/stream_join_lab?sslmode=disable
+      DATA_SOURCE_USER: demo
+      DATA_SOURCE_PASS: demo
       PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/postgres-queries.yml
     volumes:
       - ./observability/prometheus/postgres-queries.yml:/etc/postgres_exporter/postgres-queries.yml:ro
