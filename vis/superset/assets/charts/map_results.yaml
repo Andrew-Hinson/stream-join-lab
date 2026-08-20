@@ -1,0 +1,27 @@
+slice_name: Map results
+viz_type: table
+params:
+  viz_type: table
+  query_mode: raw
+  all_columns:
+    - map_name
+    - avg_duration_seconds
+    - matches
+  percent_metrics: []
+  metrics: []
+  groupby: []
+  adhoc_filters: []
+  row_limit: 100
+  order_by_cols: []
+  column_config:
+    avg_duration_seconds:
+      d3NumberFormat: ".2f"
+  table_timestamp_format: smart_date
+  show_cell_bars: true
+  include_search: false
+  server_pagination: false
+  time_range: No filter
+cache_timeout: null
+uuid: 44c1b2c3-d4e5-4f60-8c44-ccccccccccc4
+version: 1.0.0
+dataset_uuid: 44a1b2c3-d4e5-4f60-8a44-aaaaaaaaaaa4

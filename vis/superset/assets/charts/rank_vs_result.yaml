@@ -1,0 +1,24 @@
+slice_name: Rank-as-of vs result
+viz_type: table
+params:
+  viz_type: table
+  query_mode: raw
+  all_columns:
+    - rank_tier_at_match_start
+    - result
+    - facts
+  percent_metrics: []
+  metrics: []
+  groupby: []
+  adhoc_filters: []
+  row_limit: 100
+  order_by_cols: []
+  table_timestamp_format: smart_date
+  show_cell_bars: true
+  include_search: false
+  server_pagination: false
+  time_range: No filter
+cache_timeout: null
+uuid: 66c1b2c3-d4e5-4f60-8c66-ccccccccccc6
+version: 1.0.0
+dataset_uuid: 66a1b2c3-d4e5-4f60-8a66-aaaaaaaaaaa6

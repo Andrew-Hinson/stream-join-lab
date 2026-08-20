@@ -1,0 +1,16 @@
+database_name: Iceberg
+sqlalchemy_uri: trino://trino@trino:8080/iceberg
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_csv_upload: false
+allow_run_async: false
+expose_in_sqllab: true
+cache_timeout: null
+extra:
+  allows_virtual_table_explore: true
+  engine_params:
+    connect_args:
+      http_scheme: http
+uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c
+version: 1.0.0

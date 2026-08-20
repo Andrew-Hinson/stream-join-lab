@@ -52,14 +52,6 @@ These stay 0 unless the broker is down:
 - `UnderReplicatedPartitions` (ticket template)
 - ISR shrinks on the **Kafka** dashboard
 
-Keep the rules anyway so the file is a production-shaped template. Do not treat a green replica panel as proof that Kafka can survive a broker loss.
-
-## Inhibition
-
-There is no Alertmanager in this lab, so inhibition does not run.
-
-If you add Alertmanager later, suppress **Consumer lag climbing** while **Offline partitions** is firing. Lag is expected when partitions have no leader. Do not encode that relationship in `alerts.yml`.
-
 ## Demo a page
 
 With the pipeline writing CDC topics and the Flink job running:
@@ -72,9 +64,4 @@ Watch `kafka_consumergroup_lag` for `flink-stream-join` on **Kafka** or in Prome
 
 Start the taskmanager again with `docker compose start taskmanager`. The job may restore from checkpoint; lag should fall if the consumer resumes.
 
-## Not instrumented
 
-These failures have no metric and no rule:
-
-- Iceberg write errors (the sink does not export a write-error series)
-- Kafka Connect REST `status != RUNNING` (use `curl` against the Connect API; that is not scraped)

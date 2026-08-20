@@ -1,0 +1,28 @@
+slice_name: Player leaderboard
+viz_type: table
+params:
+  viz_type: table
+  query_mode: raw
+  all_columns:
+    - account_name
+    - wins
+    - kd
+  percent_metrics: []
+  metrics: []
+  groupby: []
+  adhoc_filters: []
+  row_limit: 100
+  order_by_cols:
+    - '["wins", false]'
+  column_config:
+    kd:
+      d3NumberFormat: ".2f"
+  table_timestamp_format: smart_date
+  show_cell_bars: true
+  include_search: false
+  server_pagination: false
+  time_range: No filter
+cache_timeout: null
+uuid: 55c1b2c3-d4e5-4f60-8c55-ccccccccccc5
+version: 1.0.0
+dataset_uuid: 55a1b2c3-d4e5-4f60-8a55-aaaaaaaaaaa5

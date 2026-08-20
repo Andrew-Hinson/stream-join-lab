@@ -1,0 +1,63 @@
+table_name: map_results
+main_dttm_col: null
+description: Map duration and match counts
+schema: demo
+catalog: iceberg
+sql: |
+  SELECT
+    map_name,
+    ROUND(AVG(CAST(match_duration_seconds AS DOUBLE)), 2) AS avg_duration_seconds,
+    COUNT(DISTINCT match_id) AS matches
+  FROM iceberg.demo.match_facts
+  GROUP BY 1
+  ORDER BY matches DESC
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+metrics:
+  - metric_name: count
+    verbose_name: COUNT(*)
+    metric_type: count
+    expression: COUNT(*)
+    description: null
+    d3format: null
+    extra: {}
+    warning_text: null
+columns:
+  - column_name: map_name
+    verbose_name: map
+    is_dttm: false
+    is_active: true
+    type: VARCHAR
+    groupby: true
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: avg_duration_seconds
+    verbose_name: avg duration
+    is_dttm: false
+    is_active: true
+    type: DOUBLE
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+  - column_name: matches
+    verbose_name: matches
+    is_dttm: false
+    is_active: true
+    type: BIGINT
+    groupby: false
+    filterable: true
+    expression: null
+    description: null
+    python_date_format: null
+version: 1.0.0
+uuid: 44a1b2c3-d4e5-4f60-8a44-aaaaaaaaaaa4
+database_uuid: 8f3e2c1a-4b5d-4a6e-9c7b-1d2e3f4a5b6c
