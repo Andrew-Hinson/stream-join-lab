@@ -1,17 +1,62 @@
 groups:
-  - name: pipeline
+  - name: page
     rules:
+      - alert: Offline partitions
+        expr: kafka_controller_kafkacontroller_value{name="OfflinePartitionsCount"} > 0
+        labels:
+          severity: page
+      - alert: Consumer lag climbing
+        expr: |
+          sum by (topic) (kafka_consumergroup_lag{consumergroup="flink-stream-join",topic=~"dbserver1\\.public\\..+"}) > 200
+          and
+          deriv(sum by (topic) (kafka_consumergroup_lag{consumergroup="flink-stream-join",topic=~"dbserver1\\.public\\..+"})[10m:]) > 5
+        labels:
+          severity: page
+      - alert: Failed checkpoints
+        expr: increase(flink_jobmanager_job_numberOfFailedCheckpoints[15m]) >= 3
+        labels:
+          severity: page
+      - alert: Job restart loop
+        expr: increase(flink_jobmanager_job_fullRestarts[10m]) >= 2
+        labels:
+          severity: page
+      - alert: CDC source stopped
+        expr: pg_debezium_slot_active == 0
+        for: 1m
+        labels:
+          severity: page
+
+  - name: ticket
+    rules:
+      - alert: Under-replicated partitions
+        expr: kafka_server_replicamanager_value{name="UnderReplicatedPartitions"} > 0
+        labels:
+          severity: ticket
       - alert: Checkpoint duration high
         expr: flink_jobmanager_job_lastCheckpointDuration > 10000
-        for: 2m
-      - alert: Consumer lag high
-        expr: kafka_consumergroup_lag{consumergroup="flink-stream-join",topic=~"dbserver1\\.public\\..+"} > 1000
-        for: 2m
+        for: 5m
+        labels:
+          severity: ticket
+      - alert: Operator backpressure
+        expr: |
+          sum by (task_name) (
+            flink_taskmanager_job_task_backPressuredTimeMsPerSecond{task_name=~".*(PlayerLookup|MatchJoin|RankAsOf|match_events|match_participants|players|ranks|Iceberg).*"}
+          ) > 500
+        for: 15m
+        labels:
+          severity: ticket
+      - alert: TaskManager heap high
+        expr: flink_taskmanager_Status_JVM_Memory_Heap_Used / flink_taskmanager_Status_JVM_Memory_Heap_Max > 0.8
+        for: 10m
+        labels:
+          severity: ticket
       - alert: Streaming source lag high
         expr: max({__name__=~"debezium_.*millisecondsbehindsource"}) > 5000
-        annotations:
-          summary: MilliSecondsBehindSource exceeded 5 seconds
+        for: 5m
+        labels:
+          severity: ticket
       - alert: Incomplete join rate
         expr: rate(flink_taskmanager_job_task_operator_join_incomplete[5m]) > 0
-        annotations:
-          summary: join.incomplete rate is greater than zero
+        for: 5m
+        labels:
+          severity: ticket
