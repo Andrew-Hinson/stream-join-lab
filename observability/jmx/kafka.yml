@@ -3,3 +3,6 @@ lowercaseOutputLabelNames: true
 includeObjectNames:
   - "kafka.server:type=BrokerTopicMetrics,*"
   - "kafka.network:type=RequestMetrics,*"
+  - "kafka.server:type=ReplicaManager,*"
+  - "kafka.controller:type=KafkaController,*"
+  - "kafka.network:type=RequestChannel,*"
