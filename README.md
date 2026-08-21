@@ -6,7 +6,7 @@ A Kafka → Debezium → Flink → Iceberg CDC pipeline. Simulates ranked Marvel
 
 MacOS, Linux, or Windows. A 16GB laptop is the intended box; set the Docker memory slider to at least 8 GiB. `./up` fails below 6 GiB.Needs Docker Desktop (or Engine + Compose v2) on m
 
-**Every `./up` is a Clean start:** it destroys Lab volumes, then builds and starts. First run is about 20 minutes (image pulls + Maven). Later runs are faster but still wipe data and replay matches. Use the URLs it prints — ports remap if 8088/3000/8081 are taken.
+**Every `./up` is a Clean start:** it destroys Lab volumes, then builds and starts. First run is about 20 minutes (image pulls + Maven). Later runs are faster but still wipe data and replay matches. Use the URLs it prints. Ports remap if 8088/3000/8081 are taken.
 
 Unzip or clone, `cd` into this folder, then:
 
@@ -60,19 +60,19 @@ flowchart LR
 
 | Component | Role |
 |---|---|
-| Postgres | System of record — players, matches, participants, rank updates |
+| Postgres | System of record: players, matches, participants, rank updates |
 | Debezium | CDC connector, publishes row-level changes to Kafka |
 | Kafka | Event backbone for CDC topics |
-| Flink | Stateful stream processing — joins CDC streams into enriched match facts |
+| Flink | Stateful stream processing: joins CDC streams into enriched match facts |
 | Iceberg (REST catalog) | Table format for streaming writes |
 | Silo (S3) | Object storage backing the Iceberg warehouse |
 | Trino | SQL engine over Iceberg |
-| Superset | Match facts vis — dashboards and SQL Lab |
+| Superset | Match facts vis: dashboards and SQL Lab |
 
 What `./up` starts:
 
 1. **Seed** inserts 48 players into Postgres
-2. **matches** simulates ranked games (12 players each) into Postgres — events, participants, rank updates
+2. **matches** simulates ranked games (12 players each) into Postgres: events, participants, rank updates
 3. **Debezium** CDC publishes those writes to Kafka
 4. **Flink** joins the streams into match facts (player + match + rank as-of match start)
 5. Facts append to the Iceberg table `demo.match_facts` (Parquet on Silo)
